@@ -15,32 +15,34 @@
 </p>
 
 <p align="center">
-  <code>v1.5.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
+  <code>v1.5.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>One-file EXE</code>
 </p>
 
-Generate Forza Horizon 6 Vinyl Group layers from PNG/JPG/BMP images. The desktop app handles generation, preview, and import in one place; normal users do not need to type memory addresses.
+Convert PNG/JPG/BMP images into Forza Horizon 6 Vinyl Group layers. The app handles generation, preview, and import in one desktop window; normal users do not need Python, `.venv`, batch files, or manual memory addresses.
+
+> **Download the EXE:** get `forza-painter-fh6-v1.5.2.exe` from [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) and run it directly.
 
 > **If the result looks blurry:** raise `Random samples` first. Values above **200000** usually make a major quality difference; higher values are clearer but take much longer to generate.
 
-> **Generation speed update:** v1.5.0 bundles upstream GPU generator `canary-26052102`, which adds the work-group evaluation algorithm from upstream PR #4 to speed up GPU candidate evaluation.
-
-> **Update check:** v1.5.0 checks for new versions on startup. Failed checks show a small `!` in the top-right; newer versions show changelog notes and an update-page button.
-
-> **Startup fix:** v1.5.2 adds a true one-file EXE for normal users and fixes the remaining batch bootstrap bug in the Python/venv package.
-
->  **Import is too slow:** The new version (v1.4.1+) tries both the v1.3 and v1.4 FH6 template locators, then falls back to RTTI scanning. Auto-location can take up to 5 minutes; keep FH6 in Vinyl Group Editor and attach an exported detailed log if it still fails.
+> **Import can take time:** v1.4.1+ tries multiple FH6 template locators and can spend up to 5 minutes finding the safe layer table. Keep FH6 in Vinyl Group Editor, do not switch menus, and export a detailed log if it still fails.
 
 | What it does | Details |
 | --- | --- |
 | Generate JSON | Convert images into geometry JSON with the bundled GPU/OpenCL generator. |
 | Preview output | Show source and generated geometry previews inside the app. |
 | Import to FH6 | Import JSON into the currently open FH6 Vinyl Group Editor. |
-| Safe FH6 workflow | Auto-locate and verify the current editable layer table before writing. |
+| Safe FH6 workflow | Auto-locate and verify the editable layer table before writing. |
+| Update check | Check for new versions on startup and show changelog notes when available. |
 
-## Resources
+## Quick Start
 
-- Import walkthrough video: https://www.bilibili.com/video/BV1hG5Z6nENZ
-- Bundled GPU generator source/reference: https://github.com/zjl88858/forza-painter-geometrize-gpu
+1. Download `forza-painter-fh6-v1.5.2.exe` from [Releases](https://github.com/bvzrays/forza-painter-fh6/releases).
+2. Put the EXE in a normal writable folder, for example `Desktop\forza-painter-fh6`.
+3. Double-click the EXE. For FH6 import, run it as administrator if Windows blocks process access.
+4. In FH6, open `Create Vinyl Group` / `Vinyl Group Editor`, load a sphere template, then `Ungroup` it.
+5. In the app, generate JSON, open the `Import` page, enter the exact template layer count, then import.
+
+Do not download GitHub's automatic `Source code` ZIP unless you are developing the project. Normal users only need the `.exe`.
 
 ## Preview
 
@@ -67,54 +69,18 @@ Generate Forza Horizon 6 Vinyl Group layers from PNG/JPG/BMP images. The desktop
   </tr>
 </table>
 
-## Quick Start
-
-1. Recommended: download `forza-painter-fh6-v1.5.2.exe` and run it directly.
-2. Source ZIP users only: install 64-bit Python, then double-click `start_app.bat`.
-3. On first source-ZIP run, `start_app.bat` creates `.venv`, installs missing dependencies, and starts the app.
-4. In FH6, open Vinyl Group Editor, load a sphere template, then Ungroup it.
-5. Generate JSON in the app, open the Import page, enter the template layer count, then import.
-
-## Setup
-
-Most users only need to run:
-
-```text
-start_app.bat
-```
-
-`start_app.bat` automatically creates the project `.venv`, installs missing dependencies, and then starts the app. You can still run `install_dependencies.bat` manually if you only want to prepare or repair the environment without launching the app.
-
-If the app does not start, run:
-
-```text
-check_environment.bat
-```
-
-The core Python app only needs `psutil` and `pywin32`. Image/JSON preview uses optional NumPy/OpenCV dependencies; the installer may skip them on Python versions where preview packages are likely to conflict.
-
-The dependency installer creates a project-local `.venv` folder and installs dependencies there. `start_app.bat`, `check_environment.bat`, and the drag-and-drop shortcut use that virtual environment instead of your global Python installation.
-
 ## Generate JSON
 
 1. Open the `Generate JSON` page.
 2. Click `Add images` and choose PNG/JPG/BMP images.
 3. Select a quality preset.
-4. Optional: enable `Use custom settings` to change output layers, resolution, random samples, and mutated samples in the app.
+4. Optional: enable `Use custom settings` to change output layers, resolution, random samples, and mutated samples.
 5. Click the fixed bottom `Start generating` button.
 6. Wait for the preview and logs to update.
 
-Generated files are saved beside the source image, for example:
-
-```text
-image.500.json
-image.1000.json
-image.3000.json
-```
+Generated files are saved beside the source image, for example `image.500.json`, `image.1000.json`, and `image.3000.json`.
 
 One image can generate multiple checkpoint JSON files. Prefer the highest-layer JSON that matches your template; for example, use `image.3000.json` or the final `image.json` with a 3000-layer template. Importing a 500-layer JSON into a 3000-layer template will look blurry.
-
-Current preset differences:
 
 | Preset | Output layers | Random samples | Use case |
 | --- | ---: | ---: | --- |
@@ -124,219 +90,95 @@ Current preset differences:
 | slow | 2500 | 220000 | Final quality; starts using the 200k+ quality range |
 | super slow | 3000 | 350000 | Best clarity, very slow |
 
-## Quality And Custom Settings
-
-Later presets are usually slower and cleaner.
-
-- `extremely fast`: quick composition tests.
-- `fast`: quick usable output.
-- `balanced`: recommended default.
-- `slow`: higher quality and 200k+ random samples.
-- `super slow`: slowest bundled preset for final output.
-
-Custom settings only affect the current run. Common fields:
-
-- `Output layers`: maximum layer count.
-- `Max resolution`: maximum processing resolution.
-- `Random samples`: more candidates, slower generation.
-- `Mutated samples`: more optimization, slower generation.
-- `Save checkpoints`: JSON checkpoints to save, for example `500,1000,1500,3000`.
-
-## Prepare FH6
-
-1. Start Forza Horizon 6.
-2. Open `Create Vinyl Group` / `Vinyl Group Editor`.
-3. Load a template made from many simple sphere layers.
-4. `Ungroup` the template.
-5. Remember the exact layer count shown in game.
-6. Keep this editor open while importing.
-
-Recommended template size: 500 to 3000 layers.
-
 ## Import JSON
 
-1. Open the `Import` page.
-2. Click `Refresh` and select the running `forzahorizon6.exe`.
-3. Enter the current in-game template layer count.
-4. Add the generated `.json`, or click `Use generated JSON`.
-5. Leave advanced address fields empty.
-6. Click `Import JSON`.
+1. Start FH6 and keep `Vinyl Group Editor` open.
+2. Load or create a template made from many simple sphere layers.
+3. `Ungroup` the template and remember the exact in-game layer count.
+4. In the app, open `Import`, click `Refresh`, and select `forzahorizon6.exe`.
+5. Enter the exact template layer count.
+6. Add the generated `.json`, or click `Use generated JSON`.
+7. Leave advanced address fields empty and click `Import JSON`.
 
-The app locates and verifies the current FH6 layer table before writing. If the target cannot be verified safely, it stops before writing.
+FH needs 4 extra boundary layers to save the cover and apply bounds correctly. Example: a 1000-layer JSON should use at least a 1004-layer template; a 3000-layer template can import about 2996 drawable shapes.
 
-> FH needs 4 extra boundary layers to save the cover and apply bounds correctly.  
-> Example: a 1000-layer JSON should use at least a 1004-layer template; a 3000-layer template can import about 2996 drawable shapes.
+## Important Rules
 
-## Rules
-
-- The template must be ungrouped.
+- The FH6 template must be ungrouped before import.
 - The layer count in the app must exactly match the game.
 - Do not switch game menus while importing.
-- After restarting the game, reloading the template, or changing layer count, import again with the new correct count.
+- After restarting FH6, reloading the template, or changing layer count, import again with the new correct count.
 - If JSON has fewer layers than the template, unused template layers are hidden.
 - If JSON has more layers than the template, extra shapes are trimmed.
-- If the imported image looks blurry, you probably imported a low-layer checkpoint or generated too few output layers.
 - Transparent PNG backgrounds are not imported as visible backgrounds.
 
-## Changelog
+## Runtime Files
 
-### v1.5.2 / 2026-05-22
+The one-file EXE extracts its internal files temporarily and stores normal runtime data outside the EXE. The app shows the exact paths in the startup log and on the `Tools` page.
 
-- Updated the app version to `v1.5.2`; release packages now use `forza-painter-fh6-v1.5.2.zip`, `forza-painter-fh6-v1.5.2.exe`, and `forza-painter-fh6-v1.5.2-onefile.zip`.
-- Added a PyInstaller-based one-file EXE so normal users no longer need to install Python, create `.venv`, or keep helper files beside the app.
-- The GUI EXE now re-launches itself in hidden helper mode for import and FH6 memory probing.
-- The Tools page and startup log now show where external runtime/cache files are stored.
-- Fixed the batch bootstrap variable-expansion bug that could run `-m venv` instead of `python -m venv`.
+Expected external folders beside the EXE:
 
-### v1.5.1 / 2026-05-22
+- `runtime/`: logs, generated session data, and temporary app files.
+- `webui-data/`: local browser/UI cache.
 
-- Updated the app version to `v1.5.1`; release packages now use `forza-painter-fh6-v1.5.1.zip`.
-- Fixed startup dependency installation when a project `.venv` exists but its Python does not have `pip`; the bootstrapper now runs `ensurepip --upgrade` before installing requirements.
-- Improved startup-script diagnostics when required release files are missing, with a clear message to fully extract the release ZIP first.
-
-### v1.5.0 / 2026-05-22
-
-- Updated the app version to `v1.5.0`; release packages now use `forza-painter-fh6-v1.5.0.zip`.
-- Updated the bundled GPU/OpenCL generator to upstream `canary-26052102`.
-- Added the upstream work-group evaluation algorithm from PR #4, reducing GPU candidate-evaluation overhead and improving generation throughput on supported OpenCL devices.
-- Added startup update checking: failed checks show a small `!` in the top-right, and newer versions show a changelog prompt with an update-page button.
-- Added root `CHANGELOG.md` so the app can display release notes during update prompts.
-- Switched the desktop UI to a dark theme for clearer long-running generation/import sessions.
-- `start_app.bat` now bootstraps the project-local `.venv`: it installs missing dependencies and then launches the app.
-- Dependency installation now uses `.venv` instead of installing packages into the global Python environment.
-
-### v1.4.1 / 2026-05-21
-
-- Updated the app version to `v1.4.1`; release packages now use `forza-painter-fh6-v1.4.1.zip`.
-- FH6 template auto-location now tries both the v1.3 small/medium-region address-order scan and the v1.4 large-region chunked scan before giving up.
-- Added an RTTI vtable fallback locator for difficult FH6 sessions while keeping the existing safe table validation before writing.
-- Raised the FH6 auto-location budget to 300 seconds, with a 360-second outer watchdog timeout.
-- Added a user-facing wait message before FH6 auto-location starts, warning users to keep the Vinyl Group Editor open and avoid switching menus.
-
-### v1.4.0 / 2026-05-21
-
-- Updated the app version to `v1.4.0`; release packages now use `forza-painter-fh6-v1.4.0.zip`.
-- Added an `Export detailed log` button that lets users choose where to save a diagnostic log capped at 50000 characters.
-- Detailed logs now include raw helper/generator output, command lines, exit codes, selected process/template state, and current session details.
-- Improved FH6 template auto-location by scanning large writable private memory regions in 4 MB chunks instead of skipping them.
-- Changed FH6 layout scanning to prioritize larger writable private regions first, matching the working FH6-ready importer behavior more closely.
-- Raised the FH6 template auto-locate scan limit to 120 seconds, with an outer app watchdog timeout of 160 seconds.
-- Added stale game PID handling so the app refreshes the process list when the selected FH6 process no longer exists.
-
-### v1.3.0 / 2026-05-21
-
-- Updated the app version to `v1.3.0`; release packages now use `forza-painter-fh6-v1.3.0.zip`.
-- Updated the bundled GPU/OpenCL generator to upstream `canary-26052101`.
-- Added the upstream generator device-selection fix, which prioritizes NVIDIA GPUs with the most VRAM and helps avoid accidentally running generation on an integrated GPU.
-- Generation logs now show the selected OpenCL device, making GPU selection easier to confirm.
-- Adopted the upstream generator log wording change from `delta error` to `DeltaE`, reducing false error reports in generation logs.
-- Improved FH6 template auto-locate failure handling so stale session cache is not reported as a newly verified template.
-
-### v1.2.0 / 2026-05-20
-
-- Updated the app version to `v1.2.0`; release packages now use `forza-painter-fh6-v1.2.0.zip`.
-- Updated the bundled GPU/OpenCL generator to upstream `canary-26052001`, including the OpenCL slot deadlock fix, progressive scale decay, and occluded-geometry recycling.
-- Added explicit `forceOpaqueShapes = true` to bundled and custom generation settings for compatibility with the current generator.
-- Refreshed the README layout with a centered logo, clearer resource links, and a compact preview grid.
-
-### v1.1.1 / 2026-05-20
-
-- Added centralized version management. The window title, command-line `--version`, and release package name now use `v1.1.1`.
-- Reorganized the repository layout: source code moved to `src/`, the generator moved to `bin/`, presets moved to `config/settings/`, and release scripts moved to `scripts/`.
-- Updated the release script to build `forza-painter-fh6-v1.1.1.zip` and exclude caches, logs, and `__pycache__`.
-- Merged license notices into the root `LICENSE`, including the bundled GPU/OpenCL generator notice.
-- Added a `Stop current generation` button so the current GPU generator can be stopped safely.
-- Added ETA display for generation progress, using rolling speed and smoothing to avoid large ETA jumps.
-- Fixed a shutdown issue where the GPU generator could keep running after the app window was closed.
-- Retuned bundled quality presets with clearer layer, random sample, and resolution tiers; added the `I hate my GPU` heavy preset.
-
-### 2026-05-19
-
-- The GPU/OpenCL generator was updated to the upstream canary build to improve transparent PNG edges and large overhang artifacts.
-- Import and preview now normalize geometry JSON first, improving compatibility with common legacy forza-painter JSON field formats.
-
-### 2026-05-18
-
-- JSON generation now uses the bundled GPU/OpenCL generator to reduce artifacts from the old generator.
-- The app now uses a standalone desktop window with generation, import, preview, and tutorial pages in one place.
-- The Generate page has quality presets plus in-app custom settings, so users no longer need to edit config files manually.
-- The Import page is simplified for normal users: select the game process, enter the template layer count, choose JSON, then import.
-- Fixed an FH6 issue where the design was visible in the editor but saved with a blank cover, pasted blank onto the car, or appeared blank after copying to another vinyl.
-- FH import now reserves 4 boundary layers so FH can calculate the saved cover and apply bounds correctly.
-- Added environment checks and troubleshooting notes for Python, OpenCL, permissions, and optional preview dependencies.
+These folders can be deleted when the app is closed if you want to reset local runtime data.
 
 ## Troubleshooting
 
-### GPU Generator Or OpenCL Error
+- **EXE will not import into FH6:** close the app and run the EXE as administrator.
+- **GPU/OpenCL error:** update NVIDIA/AMD/Intel graphics drivers. The bundled generator uses OpenCL.
+- **Template cannot be located:** confirm you are in Vinyl Group Editor, the template is ungrouped, the layer count is exact, and the menu was not changed during scanning.
+- **Imported result is blurry:** use a higher-layer JSON or increase `Output layers` / `Random samples`.
+- **Need help debugging:** use `Export detailed log` in the app and attach the log to an issue.
 
-Update the NVIDIA/AMD/Intel graphics driver. The bundled generator is `bin/forza-painter-geometrize-go.exe` and uses OpenCL.
+## Resources
 
-### Python Or Dependency Error
+- Import walkthrough video: https://www.bilibili.com/video/BV1hG5Z6nENZ
+- Bundled GPU generator source/reference: https://github.com/zjl88858/forza-painter-geometrize-gpu
+- Full changelog: [CHANGELOG.md](CHANGELOG.md)
 
-Run:
+## Changelog
 
-```powershell
-install_dependencies.bat
-```
+Only versioned release entries are kept here. See [CHANGELOG.md](CHANGELOG.md) for the app update prompt changelog.
 
-Then run:
+### v1.5.2 / 2026-05-22
 
-```powershell
-check_environment.bat
-```
+- Added a true one-file EXE so normal users no longer need Python, `.venv`, or helper files.
+- The GUI EXE can relaunch itself in hidden helper mode for import and FH6 memory probing.
+- The Tools page and startup log now show external runtime/cache locations.
 
-`Core OK` means the Python dependencies are installed.
+### v1.5.1 / 2026-05-22
 
-### `_ARRAY_API not found`, NumPy, Or OpenCV Error
+- Fixed startup dependency installation when a project `.venv` exists but its Python does not have `pip`.
+- Improved startup-script diagnostics for incomplete source-package extraction.
 
-This is an optional preview dependency issue. It does not block JSON generation or FH6 import. Reinstall core dependencies first:
+### v1.5.0 / 2026-05-22
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-```
+- Updated the bundled GPU/OpenCL generator to upstream `canary-26052102`.
+- Added the upstream work-group evaluation algorithm from PR #4 for faster GPU candidate evaluation.
+- Added startup update checking, root `CHANGELOG.md`, and the dark desktop UI.
 
-If you need the built-in preview, install Python 3.12, delete `.venv`, then run `install_dependencies.bat` again so the virtual environment is recreated with Python 3.12.
+### v1.4.1 / 2026-05-21
 
-### `OpenProcess` Or Permission Error
+- FH6 template auto-location now tries both v1.3 and v1.4 scan strategies before giving up.
+- Added an RTTI vtable fallback locator and increased the auto-location wait budget.
 
-Close the app and run `start_app.bat` as administrator.
+### v1.4.0 / 2026-05-21
 
-JSON generation does not need administrator permission. FH6 import usually does.
+- Added detailed log export capped at 50000 characters.
+- Improved FH6 template auto-location for large writable memory regions.
 
-### Game Process Not Found
+### v1.3.0 / 2026-05-21
 
-Start FH6 first, then click `Refresh`. If it still does not appear, restart the app.
+- Updated the bundled GPU/OpenCL generator to upstream `canary-26052101`.
+- Added the upstream GPU device-selection fix and selected-device logging.
 
-### No Safe Template Found
+### v1.2.0 / 2026-05-20
 
-Check:
+- Updated the bundled GPU/OpenCL generator to upstream `canary-26052001`.
+- Added `forceOpaqueShapes = true` to bundled and custom generation settings.
 
-- You are in Vinyl Group Editor.
-- The template is ungrouped.
-- The layer count is exact.
-- You did not switch menus after entering the count.
+### v1.1.1 / 2026-05-20
 
-### Import Looks Cut Off
-
-The template has too few layers. Use a larger template or generate fewer JSON layers.
-
-## Files
-
-Most users only need:
-
-- `start_app.bat`: install missing dependencies if needed, then start the app.
-- `install_dependencies.bat`: prepare or repair Python dependencies without launching the app.
-- `check_environment.bat`: check the environment.
-- `clean_runtime_data.bat`: remove runtime caches before publishing or re-zipping.
-- `1. drag_image_file_here.bat`: optional shortcut for dragging an image into the app.
-
-Do not publish runtime/cache/local-environment folders such as `.venv`, `webui-data`, `runtime`, `__pycache__`, or `dist`.
-
-## Directory Layout
-
-- `src/`: application source code; normal users do not need to open it.
-- `bin/`: bundled GPU/OpenCL generator.
-- `config/settings/`: generation quality presets.
-- `assets/`: sample assets.
-- `docs/screenshots/`: screenshots used by the README.
-- `scripts/`: development and release scripts.
+- Added centralized version management for the app window, CLI, and release package names.
+- Reorganized the repository layout and release packaging.

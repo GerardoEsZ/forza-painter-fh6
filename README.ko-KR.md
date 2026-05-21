@@ -15,100 +15,170 @@
 </p>
 
 <p align="center">
-  <code>v1.5.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
+  <code>v1.5.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>One-file EXE</code>
 </p>
 
-PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어용 geometry JSON으로 변환합니다. 데스크톱 앱에서 JSON 생성, 미리보기, FH6 가져오기를 한 번에 처리할 수 있으며 일반 사용자는 메모리 주소를 직접 입력하지 않아도 됩니다.
+PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어로 변환합니다. 앱에서 생성, 미리보기, 가져오기를 한 번에 처리하며 일반 사용자는 Python, `.venv`, 배치 파일, 메모리 주소 입력이 필요 없습니다.
 
-> **결과가 흐릿해 보이면:** 먼저 `Random samples` 값을 높이세요. **200000** 이상부터 품질 차이가 크게 보이는 경우가 많습니다. 값이 높을수록 선명해지지만 생성 시간도 길어집니다.
+> **EXE 다운로드:** [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.5.2.exe`를 내려받아 바로 실행하세요.
 
-> **생성 속도 업데이트:** v1.5.0은 upstream GPU 생성기 `canary-26052102`를 포함하며, upstream PR #4의 work-group evaluation 알고리즘으로 GPU 후보 평가 속도를 개선합니다.
+> **결과가 흐릿하면:** 먼저 `Random samples` 값을 높이세요. **200000** 이상부터 품질 차이가 크게 보이는 경우가 많습니다.
 
-> **업데이트 확인:** v1.5.0은 시작 시 새 버전을 확인합니다. 확인에 실패하면 오른쪽 위에 작은 `!`가 표시되고, 새 버전이 있으면 변경 내역과 업데이트 페이지 버튼이 표시됩니다.
+> **가져오기는 시간이 걸릴 수 있습니다:** v1.4.1부터 여러 FH6 템플릿 위치 찾기 방식을 시도하며 최대 5분 정도 걸릴 수 있습니다. FH6를 Vinyl Group Editor에 그대로 두고 메뉴를 바꾸지 마세요.
 
-> **시작 문제 수정:** v1.5.2는 일반 사용자용 단일 EXE를 추가하고 Python/venv 패키지의 남은 배치 부트스트랩 문제를 수정합니다.
-
-> **가져오기가 너무 느리면:** v1.4.1부터는 v1.3 및 v1.4 FH6 템플릿 찾기 방식을 모두 시도한 뒤 필요하면 RTTI fallback을 사용합니다. 자동 찾기는 최대 5분 정도 걸릴 수 있으므로 FH6를 Vinyl Group Editor에 그대로 두고 메뉴를 전환하지 마세요. 그래도 실패하면 자세한 로그를 내보내 이슈에 첨부해 주세요.
+| 기능 | 설명 |
+| --- | --- |
+| JSON 생성 | 내장 GPU/OpenCL 생성기로 이미지를 geometry JSON으로 변환합니다. |
+| 미리보기 | 원본 이미지와 생성된 geometry를 앱에서 확인합니다. |
+| FH6 가져오기 | 현재 열려 있는 FH6 Vinyl Group Editor에 JSON을 가져옵니다. |
+| 안전한 쓰기 | 쓰기 전에 편집 가능한 레이어 테이블을 자동으로 찾고 검증합니다. |
+| 업데이트 확인 | 시작 시 새 버전을 확인하고 변경 내역을 표시합니다. |
 
 ## 빠른 시작
 
-1. 이 저장소를 ZIP으로 내려받아 압축을 풉니다.
-2. 64비트 Python을 설치합니다. Python 3.12를 권장합니다.
-3. 권장: `forza-painter-fh6-v1.5.2.exe`를 내려받아 바로 실행합니다. 소스 ZIP 사용자는 `start_app.bat`을 실행하세요.
-4. FH6에서 Vinyl Group Editor를 열고 sphere 템플릿을 불러온 뒤 Ungroup합니다.
-5. 앱에서 JSON을 생성하고, Import 페이지에서 템플릿 레이어 수를 입력한 뒤 가져오기를 실행합니다.
+1. [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.5.2.exe`를 다운로드합니다.
+2. EXE를 쓰기 가능한 일반 폴더에 둡니다. 예: `Desktop\forza-painter-fh6`.
+3. EXE를 더블 클릭합니다. FH6 가져오기에서 Windows가 프로세스 접근을 막으면 관리자 권한으로 실행하세요.
+4. FH6에서 `Create Vinyl Group` / `Vinyl Group Editor`를 열고 sphere 템플릿을 불러온 뒤 `Ungroup`합니다.
+5. 앱에서 JSON을 생성하고 `Import` 페이지에서 실제 템플릿 레이어 수를 입력한 뒤 가져오기를 실행합니다.
 
-## 설정
+개발 목적이 아니라면 GitHub의 자동 `Source code` ZIP을 받을 필요가 없습니다. 일반 사용자는 `.exe`만 사용하세요.
 
-대부분의 사용자는 아래 두 파일만 실행하면 됩니다.
+## 미리보기
 
-```text
-start_app.bat
-```
-
-`start_app.bat`은 프로젝트 내부의 `.venv`를 자동으로 만들고 누락된 의존성을 설치한 뒤 앱을 바로 실행합니다. 앱을 실행하지 않고 환경만 준비하거나 복구하려면 `install_dependencies.bat`을 따로 실행할 수 있습니다.
-
-앱이 시작되지 않으면 아래 파일을 실행해 환경을 확인하세요.
-
-```text
-check_environment.bat
-```
-
-핵심 Python 앱은 `psutil`과 `pywin32`만 필요합니다. 이미지/JSON 미리보기는 선택 의존성인 NumPy/OpenCV를 사용하며, Python 버전에 따라 설치 프로그램이 미리보기 패키지를 건너뛸 수 있습니다.
-
-의존성 설치 도구는 프로젝트 내부의 `.venv` 폴더를 만들고 그 가상 환경에 의존성을 설치합니다. `start_app.bat`, `check_environment.bat`, 드래그 앤 드롭 바로가기는 전역 Python 대신 이 가상 환경을 사용합니다.
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/screenshots/app-import-preview.png" alt="App import page"><br>
+      <strong>App import page</strong>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/screenshots/fh6-template-ready.png" alt="FH6 template ready"><br>
+      <strong>Template ready in FH6</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/screenshots/fh6-import-result.png" alt="FH6 import result"><br>
+      <strong>Imported result</strong>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/screenshots/fh6-car-applied.png" alt="FH6 car applied result"><br>
+      <strong>Applied to car</strong>
+    </td>
+  </tr>
+</table>
 
 ## JSON 생성
 
-1. `JSON 생성` 페이지를 엽니다.
-2. `이미지 추가`를 클릭하고 PNG/JPG/BMP 이미지를 선택합니다.
+1. `Generate JSON` 페이지를 엽니다.
+2. `Add images`를 클릭하고 PNG/JPG/BMP 이미지를 선택합니다.
 3. 품질 프리셋을 선택합니다.
-4. 필요하면 `사용자 설정 사용`을 켜고 출력 레이어, 해상도, 무작위 샘플, 변형 샘플을 조정합니다.
-5. 하단의 `현재 설정으로 생성` 버튼을 클릭합니다.
+4. 필요하면 `Use custom settings`를 켜고 출력 레이어, 해상도, 무작위 샘플, 변형 샘플을 조정합니다.
+5. 하단의 `Start generating` 버튼을 클릭합니다.
 6. 미리보기와 로그가 업데이트될 때까지 기다립니다.
 
-생성된 파일은 원본 이미지 옆에 저장됩니다.
+생성된 파일은 원본 이미지 옆에 저장됩니다. 예: `image.500.json`, `image.1000.json`, `image.3000.json`.
 
-```text
-image.500.json
-image.1000.json
-image.3000.json
-```
+템플릿 레이어 수와 가장 잘 맞는 높은 레이어 JSON을 사용하는 것이 좋습니다. 3000 레이어 템플릿에는 `image.3000.json` 또는 최종 `image.json`을 사용하세요.
 
-템플릿 레이어 수와 맞는 가장 높은 레이어 JSON을 사용하는 것이 좋습니다. 예를 들어 3000 레이어 템플릿에는 `image.3000.json` 또는 최종 `image.json`을 사용하세요.
-
-## FH6 준비
-
-1. Forza Horizon 6를 실행합니다.
-2. `Create Vinyl Group` / `Vinyl Group Editor`를 엽니다.
-3. 많은 단순 sphere 레이어로 만든 템플릿을 불러옵니다.
-4. 템플릿을 `Ungroup`합니다.
-5. 게임에 표시된 정확한 레이어 수를 기억합니다.
-6. 가져오기 중에는 이 편집기 화면을 유지합니다.
-
-권장 템플릿 크기는 500~3000 레이어입니다.
+| 프리셋 | 출력 레이어 | 무작위 샘플 | 용도 |
+| --- | ---: | ---: | --- |
+| extremely fast | 500 | 30000 | 빠른 구도 확인 |
+| fast | 1000 | 60000 | 빠른 초안 |
+| balanced | 1800 | 120000 | 기본 권장값 |
+| slow | 2500 | 220000 | 완성용 품질 |
+| super slow | 3000 | 350000 | 가장 선명하지만 매우 느림 |
 
 ## JSON 가져오기
 
-1. `가져오기` 페이지를 엽니다.
-2. `새로고침`을 클릭하고 실행 중인 `forzahorizon6.exe`를 선택합니다.
-3. 현재 게임 안 템플릿 레이어 수를 입력합니다.
-4. 생성된 `.json`을 추가하거나 `생성된 JSON 사용`을 클릭합니다.
-5. 고급 주소 입력칸은 비워둡니다.
-6. `JSON 가져오기`를 클릭합니다.
+1. FH6를 실행하고 `Vinyl Group Editor`를 열어 둡니다.
+2. 단순한 sphere 레이어가 많은 템플릿을 불러오거나 만듭니다.
+3. 템플릿을 `Ungroup`하고 게임에 표시되는 실제 레이어 수를 확인합니다.
+4. 앱의 `Import` 페이지에서 `Refresh`를 누르고 `forzahorizon6.exe`를 선택합니다.
+5. 실제 템플릿 레이어 수를 입력합니다.
+6. 생성된 `.json`을 추가하거나 `Use generated JSON`을 클릭합니다.
+7. 고급 주소 입력칸은 비워 두고 `Import JSON`을 클릭합니다.
 
-앱은 현재 FH6 레이어 테이블을 찾아 검증한 뒤 쓰기를 진행합니다. 안전하게 검증할 수 없으면 쓰기 전에 중지합니다.
+FH는 커버 저장과 적용 범위를 위해 4개의 추가 경계 레이어가 필요합니다. 예: 1000 레이어 JSON에는 최소 1004 레이어 템플릿을 사용하는 것이 좋습니다.
 
-> FH는 커버 저장과 적용 범위를 올바르게 처리하려면 경계 레이어 4개가 더 필요합니다.  
-> 예: 1000 레이어 JSON은 최소 1004 레이어 템플릿을 사용해야 하며, 3000 레이어 템플릿은 약 2996개의 그릴 수 있는 shape를 가져올 수 있습니다.
+## 중요 규칙
 
-## 규칙
-
-- 템플릿은 반드시 ungroup 상태여야 합니다.
-- 앱에 입력한 레이어 수는 게임의 레이어 수와 정확히 같아야 합니다.
-- 가져오는 동안 게임 메뉴를 전환하지 마세요.
-- 게임을 재시작하거나 템플릿을 다시 불러오거나 레이어 수가 바뀌면 새 값으로 다시 가져오세요.
+- 템플릿은 반드시 Ungroup되어 있어야 합니다.
+- 앱에 입력한 레이어 수는 게임과 정확히 같아야 합니다.
+- 가져오기 중에는 게임 메뉴를 전환하지 마세요.
+- FH6를 다시 시작하거나 템플릿을 다시 불러온 경우 새 레이어 수로 다시 가져오세요.
 - JSON 레이어가 템플릿보다 적으면 남는 템플릿 레이어는 숨겨집니다.
 - JSON 레이어가 템플릿보다 많으면 초과 shape는 잘립니다.
-- 가져온 이미지가 흐릿하면 낮은 레이어 체크포인트를 가져왔거나 출력 레이어를 너무 적게 생성했을 가능성이 큽니다.
-- 투명 PNG 배경은 보이는 배경으로 가져오지 않습니다.
+- 투명 PNG 배경은 보이는 배경색으로 가져오지 않습니다.
+
+## 런타임 파일 위치
+
+단일 EXE는 내부 파일을 임시로 풀고 일반 런타임 데이터는 EXE 밖에 저장합니다. 정확한 위치는 시작 로그와 `Tools` 페이지에서 확인할 수 있습니다.
+
+EXE 옆에 생길 수 있는 외부 폴더:
+
+- `runtime/`: 로그, 세션 데이터, 임시 파일.
+- `webui-data/`: 로컬 브라우저/UI 캐시.
+
+앱을 닫은 뒤 이 폴더를 삭제하면 로컬 런타임 데이터를 초기화할 수 있습니다.
+
+## 문제 해결
+
+- **FH6 가져오기가 안 됨:** 앱을 닫고 EXE를 관리자 권한으로 실행하세요.
+- **GPU/OpenCL 오류:** NVIDIA/AMD/Intel 그래픽 드라이버를 업데이트하세요.
+- **템플릿을 찾을 수 없음:** Vinyl Group Editor에 있는지, 템플릿이 Ungroup되었는지, 레이어 수가 정확한지 확인하세요.
+- **가져온 결과가 흐림:** 더 높은 레이어 JSON을 사용하거나 `Output layers` / `Random samples`를 높이세요.
+- **디버깅이 필요함:** 앱에서 `Export detailed log`를 실행하고 로그를 이슈에 첨부하세요.
+
+## 리소스
+
+- 가져오기 참고 영상: https://www.bilibili.com/video/BV1hG5Z6nENZ
+- 내장 GPU 생성기 출처/참고: https://github.com/zjl88858/forza-painter-geometrize-gpu
+- 전체 변경 기록: [CHANGELOG.md](CHANGELOG.md)
+
+## 변경 기록
+
+여기에는 버전 번호가 있는 릴리스만 남깁니다. 앱 업데이트 안내에 쓰이는 전체 기록은 [CHANGELOG.md](CHANGELOG.md)를 참고하세요.
+
+### v1.5.2 / 2026-05-22
+
+- 일반 사용자가 Python, `.venv`, helper 파일 없이 사용할 수 있는 단일 EXE를 추가했습니다.
+- GUI EXE가 가져오기와 FH6 메모리 탐색을 위해 숨겨진 helper 모드로 자기 자신을 다시 실행할 수 있습니다.
+- Tools 페이지와 시작 로그에 외부 런타임/캐시 위치를 표시합니다.
+
+### v1.5.1 / 2026-05-22
+
+- 프로젝트 `.venv`에 `pip`가 없는 경우 의존성 설치가 실패하던 문제를 수정했습니다.
+- 소스 패키지의 누락 파일 진단 메시지를 개선했습니다.
+
+### v1.5.0 / 2026-05-22
+
+- 내장 GPU/OpenCL 생성기를 upstream `canary-26052102`로 업데이트했습니다.
+- upstream PR #4의 work-group evaluation 알고리즘을 추가했습니다.
+- 시작 시 업데이트 확인, 루트 `CHANGELOG.md`, 어두운 데스크톱 UI를 추가했습니다.
+
+### v1.4.1 / 2026-05-21
+
+- FH6 템플릿 자동 찾기가 v1.3 및 v1.4 스캔 방식을 모두 시도합니다.
+- RTTI vtable fallback을 추가하고 자동 찾기 대기 시간을 늘렸습니다.
+
+### v1.4.0 / 2026-05-21
+
+- 50000자 제한의 자세한 로그 내보내기를 추가했습니다.
+- 큰 쓰기 가능 메모리 영역에 대한 FH6 템플릿 자동 찾기를 개선했습니다.
+
+### v1.3.0 / 2026-05-21
+
+- 내장 GPU/OpenCL 생성기를 upstream `canary-26052101`로 업데이트했습니다.
+- GPU 선택 수정과 선택된 OpenCL 장치 로그를 추가했습니다.
+
+### v1.2.0 / 2026-05-20
+
+- 내장 GPU/OpenCL 생성기를 upstream `canary-26052001`로 업데이트했습니다.
+- 내장 및 사용자 생성 설정에 `forceOpaqueShapes = true`를 명시했습니다.
+
+### v1.1.1 / 2026-05-20
+
+- 앱 창, CLI, 릴리스 패키지 이름에 중앙 버전 관리를 추가했습니다.
+- 저장소 구조와 릴리스 패키징을 정리했습니다.

@@ -15,20 +15,16 @@
 </p>
 
 <p align="center">
-  <code>v1.5.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
+  <code>v1.5.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>单文件 EXE</code>
 </p>
 
-把 PNG/JPG/BMP 图片转换成 Forza Horizon 6 的 Vinyl Group 图层。软件内完成生成、预览和导入，普通用户不需要手动填写内存地址。
+把 PNG/JPG/BMP 图片转换成 Forza Horizon 6 的 Vinyl Group 图层。软件内完成生成、预览和导入，普通用户不需要 Python、`.venv`、批处理文件，也不需要手动填写内存地址。
+
+> **下载 EXE：** 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.5.2.exe`，直接运行。
 
 > **画面发糊先看这里：** 优先提高生成页里的 `Random samples / 随机样本`。随机样本数在 **200000 以上** 通常会有明显质变；数值越高越清晰，但生成时间也会明显增加。
 
-> **生成速度更新：** v1.5.0 内置上游 GPU 生成器 `canary-26052102`，引入上游 PR #4 的 work-group evaluation 算法，用于加速 GPU 候选图形评估。
-
-> **自动更新检查：** v1.5.0 启动时会检查新版本。检查失败会在右上角显示小 `!`；发现新版本会显示更新内容和更新页面按钮。
-
-> **启动修复：** v1.5.2 增加普通用户用的真正单文件 EXE，并修复 Python/venv 版剩余的批处理启动问题。
-
-> **导入过慢：** v1.4.1 起会依次尝试 v1.3 和 v1.4 两套 FH6 模板定位逻辑，并在必要时使用 RTTI fallback。自动定位最长可能需要 5 分钟；请保持 FH6 停留在 Vinyl Group Editor，不要切换菜单，若仍失败请导出详细日志并提交 issue。
+> **导入可能需要等待：** v1.4.1 起会依次尝试多套 FH6 模板定位逻辑，最长可能需要 5 分钟。请保持 FH6 停留在 Vinyl Group Editor，不要切换菜单；若仍失败，请导出详细日志。
 
 | 功能 | 说明 |
 | --- | --- |
@@ -36,11 +32,17 @@
 | 预览结果 | 在软件内预览原图和生成后的几何图形。 |
 | 导入 FH6 | 把 JSON 导入当前打开的 FH6 Vinyl Group Editor。 |
 | 安全写入 | 写入前自动定位并验证当前可编辑图层表。 |
+| 自动更新 | 启动时检查新版本，发现更新时显示更新内容。 |
 
-## 资源链接
+## 快速开始
 
-- 导入参考视频：https://www.bilibili.com/video/BV1hG5Z6nENZ
-- 内置 GPU 生成器来源/参考：https://github.com/zjl88858/forza-painter-geometrize-gpu
+1. 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.5.2.exe`。
+2. 把 EXE 放在普通可写目录里，例如 `Desktop\forza-painter-fh6`。
+3. 双击 EXE 启动。导入 FH6 时如果被 Windows 拦截进程访问，请用管理员身份运行 EXE。
+4. 在游戏里进入 `Create Vinyl Group` / `Vinyl Group Editor`，加载球形模板并 `Ungroup`。
+5. 在软件里生成 JSON，切到 `Import` 页面，填写游戏里显示的真实模板层数后导入。
+
+不要下载 GitHub 自动生成的 `Source code` ZIP，除非你要开发项目。普通用户只需要 `.exe`。
 
 ## 效果预览
 
@@ -67,84 +69,38 @@
   </tr>
 </table>
 
-## 快速开始
-
-1. 推荐：下载 `forza-painter-fh6-v1.5.2.exe`，直接运行。
-2. 仅源码 ZIP 用户需要安装 64 位 Python，然后双击 `start_app.bat`。
-3. 源码 ZIP 首次运行时，`start_app.bat` 会自动创建 `.venv`、安装缺失依赖，然后启动软件。
-4. 在游戏里进入 Vinyl Group Editor，加载并 Ungroup 球形模板。
-5. 在软件里生成 JSON，切到 Import 页面，填写模板层数后导入。
-
-## 安装
-
-普通用户只需要运行：
-
-```text
-start_app.bat
-```
-
-`start_app.bat` 会自动创建项目内 `.venv`、安装缺失依赖，然后直接启动软件。`install_dependencies.bat` 仍然保留，用于只准备或修复环境但不启动软件的情况。
-
-Python 程序只需要 `psutil` 和 `pywin32`。图片/JSON 预览需要可选的 NumPy/OpenCV，安装脚本会在容易冲突的 Python 版本上自动跳过预览依赖。
-
-依赖安装器会创建项目内 `.venv` 文件夹，并把依赖安装到这个虚拟环境里。`start_app.bat`、`check_environment.bat` 和拖拽启动脚本都会使用这个虚拟环境，不再污染全局 Python。
-
-如果软件打不开，运行：
-
-```text
-check_environment.bat
-```
-
 ## 生成 JSON
 
 1. 进入 `Generate JSON` 页面。
 2. 点击 `Add images`，添加 PNG/JPG/BMP 图片。
 3. 选择品质配置。
-4. 可选：开启 `Use custom settings`，修改输出层数、分辨率或样本数。
-5. 点击底部的 `Start generating`。
-6. 等待生成 `.json` 文件，右侧会显示预览。
-
-快的品质配置生成更快，但画面更粗糙。慢的配置耗时更长，通常效果更好。
-自定义参数只会覆盖本次运行的预设，不需要手动编辑配置文件。
+4. 可选：开启 `Use custom settings`，修改输出层数、分辨率、随机样本和变异样本。
+5. 点击底部固定的 `Start generating`。
+6. 等待生成完成，右侧会显示预览，底部会显示日志。
 
 生成的文件会保存在原图片旁边，例如 `image.500.json`、`image.1000.json`、`image.3000.json`。
 
 同一张图片可能会生成多个 checkpoint JSON。导入时优先使用层数最高、最接近模板层数的 JSON；例如 3000 层模板应优先导入 `image.3000.json` 或最终 `image.json`。如果把 500 层 JSON 导入 3000 层模板，画面会明显发糊。
-
-当前预设大致区别：
 
 | 预设 | 输出层数 | 随机样本 | 用途 |
 | --- | ---: | ---: | --- |
 | extremely fast | 500 | 30000 | 快速看构图 |
 | fast | 1000 | 60000 | 快速出可用稿 |
 | balanced | 1800 | 120000 | 默认建议 |
-| slow | 2500 | 220000 | 成品质量，开始进入明显提升区间 |
+| slow | 2500 | 220000 | 成品质量，开始进入 200k+ 提升区间 |
 | super slow | 3000 | 350000 | 最高清晰度，耗时很长 |
-
-## 准备 FH6
-
-1. 启动 Forza Horizon 6。
-2. 进入 `Create Vinyl Group` / `Vinyl Group Editor`。
-3. 加载或创建一个由大量简单 sphere 图层组成的模板。
-4. 把模板 `Ungroup`。
-5. 记住游戏里显示的真实层数。
-6. 导入时保持这个编辑器打开，不要切换菜单。
-
-推荐模板大小：500 到 3000 层。
 
 ## 导入 JSON
 
-1. 进入软件的 `Import` 页面。
-2. 点击 `Refresh`，选择正在运行的 `forzahorizon6.exe` 进程。
-3. 填写游戏里的真实模板层数。
-4. 添加生成好的 `.json`，或者点击 `Use generated JSON`。
-5. 高级地址输入框保持空白。
-6. 点击 `Import JSON`。
+1. 启动 FH6，并保持 `Vinyl Group Editor` 打开。
+2. 加载或创建一个由大量简单 sphere 图层组成的模板。
+3. 把模板 `Ungroup`，并记住游戏里显示的真实层数。
+4. 在软件 `Import` 页面点击 `Refresh`，选择正在运行的 `forzahorizon6.exe`。
+5. 填写游戏里的真实模板层数。
+6. 添加生成好的 `.json`，或者点击 `Use generated JSON`。
+7. 高级地址输入框保持空白，点击 `Import JSON`。
 
-软件会先定位并验证 FH6 图层表，确认安全后才写入。如果无法安全确认目标，软件会在写入前停止。
-
-> FH 需要额外 4 个边界层来正确保存封面和贴车范围。  
-> 例如：1000 层 JSON 建议使用至少 1004 层模板；3000 层模板实际可导入约 2996 个可绘制图形。
+FH 需要额外 4 个边界层来正确保存封面和贴车范围。例如：1000 层 JSON 建议使用至少 1004 层模板；3000 层模板实际可导入约 2996 个可绘制图形。
 
 ## 必须注意
 
@@ -154,164 +110,75 @@ check_environment.bat
 - 如果重启游戏、重新加载模板、改变模板层数，请用新的正确层数重新导入。
 - 如果 JSON 比模板小，未使用的模板层会被隐藏。
 - 如果 JSON 比模板大，超出的图形会被裁剪。
-- 如果导入后画面很糊，通常是导入了较低层数 checkpoint，或者生成时 `Output layers` 设置太低。
+- 透明 PNG 的透明背景不会作为可见底色导入。
+
+## 运行文件位置
+
+单文件 EXE 会临时解压内部文件，并把正常运行数据放在 EXE 外部。软件启动日志和 `Tools` 页面会显示具体路径。
+
+EXE 旁边可能出现这些外部文件夹：
+
+- `runtime/`：日志、会话数据和临时文件。
+- `webui-data/`：本地浏览器/UI 缓存。
+
+关闭软件后可以删除这些文件夹，用于重置本地运行数据。
+
+## 常见问题
+
+- **无法导入 FH6：** 关闭软件，用管理员身份运行 EXE。
+- **GPU/OpenCL 报错：** 更新 NVIDIA/AMD/Intel 显卡驱动。内置生成器使用 OpenCL。
+- **定位不到模板：** 确认你在 Vinyl Group Editor，模板已经 Ungroup，层数填写完全正确，扫描期间没有切换菜单。
+- **导入效果发糊：** 使用更高层数的 JSON，或提高 `Output layers` / `Random samples`。
+- **需要排查问题：** 在软件里点击 `Export detailed log`，把导出的日志附到 issue。
+
+## 资源链接
+
+- 导入参考视频：https://www.bilibili.com/video/BV1hG5Z6nENZ
+- 内置 GPU 生成器来源/参考：https://github.com/zjl88858/forza-painter-geometrize-gpu
+- 完整更新记录：[CHANGELOG.md](CHANGELOG.md)
 
 ## 更新日志
 
+这里仅保留带版本号的发布记录。用于软件更新弹窗的完整记录见 [CHANGELOG.md](CHANGELOG.md)。
+
 ### v1.5.2 / 2026-05-22
 
-- 版本更新到 `v1.5.2`，发布包名称同步为 `forza-painter-fh6-v1.5.2.zip`、`forza-painter-fh6-v1.5.2.exe` 和 `forza-painter-fh6-v1.5.2-onefile.zip`。
-- 增加基于 PyInstaller 的单文件 EXE，普通用户不再需要安装 Python、创建 `.venv` 或保留额外 helper 文件。
-- GUI EXE 现在会用自身的隐藏 helper 模式执行导入和 FH6 内存定位。
+- 增加真正的单文件 EXE，普通用户不再需要 Python、`.venv` 或额外 helper 文件。
+- GUI EXE 可用自身的隐藏 helper 模式执行导入和 FH6 内存定位。
 - Tools 页面和启动日志会显示外部运行/缓存文件保存位置。
-- 修复批处理启动器变量提前展开的问题，避免执行成 `-m venv` 而不是 `python -m venv`。
 
 ### v1.5.1 / 2026-05-22
 
-- 版本更新到 `v1.5.1`，发布包名称同步为 `forza-painter-fh6-v1.5.1.zip`。
-- 修复项目 `.venv` 已存在但其中 Python 缺少 `pip` 时依赖安装失败的问题；启动器现在会先执行 `ensurepip --upgrade` 再安装依赖。
-- 改进启动脚本诊断：如果发布包关键文件缺失，会明确提示用户先完整解压 release ZIP。
+- 修复项目 `.venv` 已存在但其中 Python 缺少 `pip` 时的依赖安装失败问题。
+- 改进源码包启动脚本的缺文件诊断提示。
 
 ### v1.5.0 / 2026-05-22
 
-- 版本更新到 `v1.5.0`，发布包名称同步为 `forza-painter-fh6-v1.5.0.zip`。
 - 内置 GPU/OpenCL 生成器更新到上游 `canary-26052102`。
-- 引入上游 PR #4 的 work-group evaluation 算法，降低 GPU 候选图形评估开销，在支持的 OpenCL 设备上提升生成吞吐。
-- 增加启动时自动检查更新：检查失败会在右上角显示小 `!`，发现新版本会弹出更新内容并提供更新页面按钮。
-- 增加根目录 `CHANGELOG.md`，用于在更新提示里展示发布内容。
-- 桌面 UI 改为深色主题，长时间生成和导入时显示更清晰。
-- `start_app.bat` 现在会自动准备项目内 `.venv`：缺依赖时先安装，安装完成后直接启动软件。
-- 依赖安装改为使用项目内 `.venv` 虚拟环境，不再把依赖安装到全局 Python。
+- 引入上游 PR #4 的 work-group evaluation 算法，加速 GPU 候选图形评估。
+- 增加启动自动更新检查、根目录 `CHANGELOG.md` 和深色桌面 UI。
 
 ### v1.4.1 / 2026-05-21
 
-- 版本更新到 `v1.4.1`，发布包名称同步为 `forza-painter-fh6-v1.4.1.zip`。
-- FH6 模板自动定位现在会先尝试 v1.3 的小/中内存区地址顺序扫描，再尝试 v1.4 的大内存区分块扫描，兼容两类用户环境。
-- 增加 RTTI vtable fallback 定位路径，用于更难定位的 FH6 session；写入前仍保留原有安全验证。
-- FH6 自动定位时间预算提高到 300 秒，App 外层保护超时提高到 360 秒。
-- 自动定位开始前增加等待提示，提醒用户保持 Vinyl Group Editor 打开、不要切换菜单并耐心等待。
+- FH6 模板自动定位会先后尝试 v1.3 和 v1.4 两套扫描方案。
+- 增加 RTTI vtable fallback，并拉长自动定位等待预算。
 
 ### v1.4.0 / 2026-05-21
 
-- 版本更新到 `v1.4.0`，发布包名称同步为 `forza-painter-fh6-v1.4.0.zip`。
-- 增加“导出详细日志”按钮，用户可以自行选择日志保存位置，导出内容上限为 50000 字符。
-- 详细日志会记录 helper/生成器原始输出、命令行、退出码、当前进程/模板状态和 session 信息，方便排查导入失败。
-- 改进 FH6 模板自动定位：大块可写 private 内存现在会按 4 MB 分块扫描，不再因为区域过大直接跳过。
-- FH6 层表扫描改为优先扫描更大的可写 private 内存区域，更接近已验证可用的 FH6-ready 导入器行为。
-- FH6 模板自动定位扫描上限提高到 120 秒，App 外层保护超时提高到 160 秒。
-- 增加过期游戏 PID 处理：选中的 FH6 进程不存在时会自动刷新进程列表，减少重启游戏后的误报。
+- 增加“导出详细日志”按钮，导出内容上限为 50000 字符。
+- 改进 FH6 大块可写内存区域的模板自动定位逻辑。
 
 ### v1.3.0 / 2026-05-21
 
-- 版本更新到 `v1.3.0`，发布包名称同步为 `forza-painter-fh6-v1.3.0.zip`。
 - 内置 GPU/OpenCL 生成器更新到上游 `canary-26052101`。
-- 引入上游生成器的显卡选择修复：优先选择显存最大的 NVIDIA GPU，减少有独显时误跑到核显的问题。
-- 生成日志现在会显示实际选中的 OpenCL 设备，方便确认是否跑在独显上。
-- 同步上游日志文案调整，把 `delta error` 改为 `DeltaE`，避免用户把正常评分日志误认为报错。
-- 改进 FH6 模板自动定位失败处理，避免定位失败后继续复用旧 session 并误报“已验证模板”。
+- 引入上游显卡选择修复，并在生成日志中显示选中的 OpenCL 设备。
 
 ### v1.2.0 / 2026-05-20
 
-- 版本更新到 `v1.2.0`，发布包名称同步为 `forza-painter-fh6-v1.2.0.zip`。
-- 内置 GPU/OpenCL 生成器更新到上游 `canary-26052001`，包含 OpenCL slot 死锁修复、progressive scale decay 和遮挡几何体回收。
-- 所有内置预设和自定义生成配置都显式写入 `forceOpaqueShapes = true`，保证与当前生成器默认行为一致。
-- 优化 README 展示：增加居中 logo，拆分资源链接，并把预览图整理为更紧凑的网格。
+- 内置 GPU/OpenCL 生成器更新到上游 `canary-26052001`。
+- 内置预设和自定义生成配置会显式写入 `forceOpaqueShapes = true`。
 
 ### v1.1.1 / 2026-05-20
 
-- 增加版本号管理，窗口标题、命令行 `--version` 和发布包名称统一使用 `v1.1.1`。
-- 整理仓库目录：源码移动到 `src/`，生成器移动到 `bin/`，预设移动到 `config/settings/`，发布脚本移动到 `scripts/`。
-- 发布包脚本改为生成 `forza-painter-fh6-v1.1.1.zip`，并自动排除缓存、日志和 `__pycache__`。
-- 合并许可证文件，第三方 GPU/OpenCL 生成器授权信息已并入根目录 `LICENSE`。
-- 生成页面加入“中断当前生成”按钮，允许在生成过程中安全停止当前 GPU 生成器。
-- 生成进度加入剩余时间预计，并改用滚动速度和平滑算法，避免预计完成时间频繁大幅跳动。
-- 修复关闭软件窗口后 GPU 生成器仍可能继续在后台运行的问题。
-- 调整内置品质预设，拉开层数、随机样本和分辨率梯度；新增 `I hate my GPU` 高负载预设。
-
-### 2026-05-19
-
-- GPU/OpenCL 生成器更新到上游 canary 版本，改善透明 PNG 边缘和大块图层外溢问题。
-- 导入和预览会先规范化 geometry JSON，兼容旧版 forza-painter 常见 JSON 字段格式。
-
-### 2026-05-18
-
-- 生成 JSON 改用 GPU/OpenCL 生成器，减少旧生成器带来的伪影问题。
-- 软件改为单独窗口操作，生成、导入、预览和教程集中在同一个界面。
-- 生成页面加入品质预设和软件内自定义参数，不再需要手动改配置文件。
-- 导入页面改成简化流程，普通用户只需要选择游戏进程、填写模板层数、选择 JSON。
-- 修复 FH6 导入后编辑器里可见，但封面、贴到车上或复制到其他喷绘后空白的问题。
-- 导入时会为 FH 保留 4 个边界层，用来保证保存封面和贴车范围正常。
-- 增加环境检查和常见问题排查说明，方便处理 Python、OpenCL、权限和预览依赖问题。
-
-## 环境问题修复
-
-### `_ARRAY_API not found`、NumPy 或 OpenCV 报错
-
-这是预览依赖问题，不是仓库少文件。
-
-FH6 导入可以不依赖预览继续使用。先重新安装核心依赖：
-
-```powershell
-.\.venv\Scripts\python.exe -m pip uninstall -y numpy opencv-python
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-```
-
-如果需要内置预览，请安装 Python 3.12，删除 `.venv` 文件夹，然后重新运行 `install_dependencies.bat`，让脚本用 Python 3.12 重新创建虚拟环境并安装预览依赖。
-
-如果你正在用 Python 3.14，并且依赖安装失败，请安装 Python 3.12 后重新运行 `install_dependencies.bat`。
-
-### 检查依赖是否正常
-
-在软件文件夹里运行：
-
-```powershell
-check_environment.bat
-```
-
-出现 `Core OK` 说明 Python 程序依赖正常。出现 `Preview is unavailable` 只代表当前 Python 环境不能显示内置预览，不影响生成 JSON 或导入 FH6。
-
-### GPU 生成器或 OpenCL 报错
-
-更新 NVIDIA/AMD/Intel 显卡驱动。仓库自带的生成器是 `bin/forza-painter-geometrize-go.exe`，它使用 OpenCL，不依赖 Python 的 NumPy/OpenCV。
-
-### 权限错误或 `OpenProcess` 失败
-
-关闭软件，用管理员身份运行 `start_app.bat`。
-
-生成 JSON 不需要管理员权限，但导入 FH6 通常需要。
-
-### 找不到游戏进程
-
-确认 FH6 已经启动。点击软件里的 `Refresh`。如果还是没有，先打开游戏，再重启软件。
-
-### 定位不到安全模板
-
-检查：
-
-- 你在 Vinyl Group Editor，不是在车身涂装或车辆编辑页面。
-- 模板已经 Ungroup。
-- 层数填写完全正确。
-- 填写层数后没有切换菜单。
-
-### 导入效果被截断
-
-模板层数不够。请使用更大的模板，或者用更快/更低质量的配置重新生成 JSON。
-
-## 用户需要打开哪些文件
-
-- `start_app.bat`：缺依赖时自动安装，然后启动软件。
-- `install_dependencies.bat`：只准备或修复依赖，不启动软件。
-- `check_environment.bat`：检查核心环境是否正常。
-- `clean_runtime_data.bat`：发布或重新压缩前清理运行缓存。
-- `1. drag_image_file_here.bat`：可选，把图片拖到这里打开软件。
-
-普通用户不需要直接打开 Python 文件。
-
-## 目录说明
-
-- `src/`：软件源码，普通用户不用打开。
-- `bin/`：内置 GPU/OpenCL 生成器。
-- `config/settings/`：生成品质预设。
-- `assets/`：示例资源。
-- `docs/screenshots/`：README 使用的截图。
-- `scripts/`：开发/发布脚本。
+- 增加集中版本号管理，统一窗口标题、命令行和发布包名称。
+- 整理仓库目录和发布包脚本。
