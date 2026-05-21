@@ -15,12 +15,16 @@
 </p>
 
 <p align="center">
-  <code>v1.4.1</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
+  <code>v1.5.0</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
 </p>
 
 Generate Forza Horizon 6 Vinyl Group layers from PNG/JPG/BMP images. The desktop app handles generation, preview, and import in one place; normal users do not need to type memory addresses.
 
 > **If the result looks blurry:** raise `Random samples` first. Values above **200000** usually make a major quality difference; higher values are clearer but take much longer to generate.
+
+> **Generation speed update:** v1.5.0 bundles upstream GPU generator `canary-26052102`, which adds the work-group evaluation algorithm from upstream PR #4 to speed up GPU candidate evaluation.
+
+> **Update check:** v1.5.0 checks for new versions on startup. Failed checks show a small `!` in the top-right; newer versions show changelog notes and an update-page button.
 
 >  **Import is too slow:** The new version (v1.4.1+) tries both the v1.3 and v1.4 FH6 template locators, then falls back to RTTI scanning. Auto-location can take up to 5 minutes; keep FH6 in Vinyl Group Editor and attach an exported detailed log if it still fails.
 
@@ -65,19 +69,19 @@ Generate Forza Horizon 6 Vinyl Group layers from PNG/JPG/BMP images. The desktop
 
 1. Download this repository as a ZIP and extract it.
 2. Install 64-bit Python. Python 3.12 is recommended.
-3. Double-click `install_dependencies.bat`.
-4. Double-click `start_app.bat`.
-5. In FH6, open Vinyl Group Editor, load a sphere template, then Ungroup it.
-6. Generate JSON in the app, open the Import page, enter the template layer count, then import.
+3. Double-click `start_app.bat`. On first run it creates `.venv`, installs missing dependencies, and then starts the app.
+4. In FH6, open Vinyl Group Editor, load a sphere template, then Ungroup it.
+5. Generate JSON in the app, open the Import page, enter the template layer count, then import.
 
 ## Setup
 
 Most users only need to run:
 
 ```text
-install_dependencies.bat
 start_app.bat
 ```
+
+`start_app.bat` automatically creates the project `.venv`, installs missing dependencies, and then starts the app. You can still run `install_dependencies.bat` manually if you only want to prepare or repair the environment without launching the app.
 
 If the app does not start, run:
 
@@ -86,6 +90,8 @@ check_environment.bat
 ```
 
 The core Python app only needs `psutil` and `pywin32`. Image/JSON preview uses optional NumPy/OpenCV dependencies; the installer may skip them on Python versions where preview packages are likely to conflict.
+
+The dependency installer creates a project-local `.venv` folder and installs dependencies there. `start_app.bat`, `check_environment.bat`, and the drag-and-drop shortcut use that virtual environment instead of your global Python installation.
 
 ## Generate JSON
 
@@ -171,6 +177,17 @@ The app locates and verifies the current FH6 layer table before writing. If the 
 - Transparent PNG backgrounds are not imported as visible backgrounds.
 
 ## Changelog
+
+### v1.5.0 / 2026-05-22
+
+- Updated the app version to `v1.5.0`; release packages now use `forza-painter-fh6-v1.5.0.zip`.
+- Updated the bundled GPU/OpenCL generator to upstream `canary-26052102`.
+- Added the upstream work-group evaluation algorithm from PR #4, reducing GPU candidate-evaluation overhead and improving generation throughput on supported OpenCL devices.
+- Added startup update checking: failed checks show a small `!` in the top-right, and newer versions show a changelog prompt with an update-page button.
+- Added root `CHANGELOG.md` so the app can display release notes during update prompts.
+- Switched the desktop UI to a dark theme for clearer long-running generation/import sessions.
+- `start_app.bat` now bootstraps the project-local `.venv`: it installs missing dependencies and then launches the app.
+- Dependency installation now uses `.venv` instead of installing packages into the global Python environment.
 
 ### v1.4.1 / 2026-05-21
 
@@ -259,8 +276,10 @@ check_environment.bat
 This is an optional preview dependency issue. It does not block JSON generation or FH6 import. Reinstall core dependencies first:
 
 ```powershell
-python -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
+
+If you need the built-in preview, install Python 3.12, delete `.venv`, then run `install_dependencies.bat` again so the virtual environment is recreated with Python 3.12.
 
 ### `OpenProcess` Or Permission Error
 
@@ -289,13 +308,13 @@ The template has too few layers. Use a larger template or generate fewer JSON la
 
 Most users only need:
 
-- `install_dependencies.bat`: install Python dependencies.
-- `start_app.bat`: start the app.
+- `start_app.bat`: install missing dependencies if needed, then start the app.
+- `install_dependencies.bat`: prepare or repair Python dependencies without launching the app.
 - `check_environment.bat`: check the environment.
 - `clean_runtime_data.bat`: remove runtime caches before publishing or re-zipping.
 - `1. drag_image_file_here.bat`: optional shortcut for dragging an image into the app.
 
-Do not publish runtime cache folders such as `webui-data`, `runtime`, `__pycache__`, or `dist`.
+Do not publish runtime/cache/local-environment folders such as `.venv`, `webui-data`, `runtime`, `__pycache__`, or `dist`.
 
 ## Directory Layout
 

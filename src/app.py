@@ -8,10 +8,13 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
+import urllib.request
+import webbrowser
 from collections import deque
 from datetime import datetime
 from pathlib import Path
-from tkinter import BOTH, END, LEFT, RIGHT, X, Button, Canvas, Checkbutton, Entry, Frame, Label, Listbox, PhotoImage, StringVar, Text, Tk, filedialog, ttk
+from tkinter import BOTH, END, LEFT, RIGHT, X, Button, Canvas, Checkbutton, Entry, Frame, Label, Listbox, PhotoImage, StringVar, Text, Tk, Toplevel, filedialog, messagebox, ttk
 
 import psutil
 
@@ -31,6 +34,22 @@ DETAILED_LOG_OUTPUT_LIMIT = 50000
 DETAILED_LOG_MEMORY_LIMIT = 120000
 FH6_AUTO_LOCATE_MAX_SECONDS = 300
 FH6_AUTO_LOCATE_TIMEOUT_SECONDS = 360
+UPDATE_VERSION_URL = "https://raw.githubusercontent.com/bvzrays/forza-painter-fh6/main/src/version.py"
+UPDATE_CHANGELOG_URL = "https://raw.githubusercontent.com/bvzrays/forza-painter-fh6/main/CHANGELOG.md"
+UPDATE_RELEASE_URL = "https://github.com/bvzrays/forza-painter-fh6/releases/latest"
+UPDATE_CHECK_TIMEOUT_SECONDS = 8
+COLOR_BG = "#0d1117"
+COLOR_PANEL = "#151b23"
+COLOR_PANEL_ALT = "#1c2430"
+COLOR_INPUT = "#0b1017"
+COLOR_TEXT = "#e6edf3"
+COLOR_MUTED = "#9aa7b4"
+COLOR_ACCENT = "#58a6ff"
+COLOR_ACCENT_DARK = "#1f6feb"
+COLOR_WARN = "#f2cc60"
+COLOR_BORDER = "#303d4f"
+COLOR_BUTTON = "#263241"
+COLOR_BUTTON_ACTIVE = "#334456"
 _CV2_CACHE = None
 _CV2_ERROR = None
 
@@ -127,6 +146,14 @@ TEXT = {
         "json_too_small": "Selected JSON has far fewer drawable layers than the usable template capacity. Import will look blurry; choose a higher-layer JSON.",
         "json_needs_more_template_layers": "FH needs 4 boundary layers for correct cover/apply behavior. Use a template with at least JSON drawable layers + 4.",
         "safe_stop": "Stopped before writing because no safe FH6 template was found.",
+        "update_available_title": "Update available",
+        "update_available_message": "A new version is available.\n\nCurrent: v{current}\nLatest: v{latest}",
+        "update_open_page": "Open update page",
+        "update_later": "Later",
+        "update_check_failed_title": "Update check failed",
+        "update_check_failed_message": "Could not check for updates. You can keep using the app.\n\n{error}",
+        "update_current": "Already on the latest version.",
+        "changelog": "Changelog",
         "tutorial": """Beginner workflow
 
 1. Install 64-bit Python 3.12 if possible, then run install_dependencies.bat.
@@ -237,6 +264,14 @@ Notes
         "json_too_small": "当前 JSON 可绘制层数远少于模板可用容量，导入会很糊；请换用更高层数的 JSON。",
         "json_needs_more_template_layers": "FH 需要预留 4 个边界层，才能正常保存封面和贴到车上。模板层数建议至少为 JSON 可绘制层数 + 4。",
         "safe_stop": "未找到安全 FH6 模板，已在写入前停止。",
+        "update_available_title": "发现新版本",
+        "update_available_message": "检测到新版本。\n\n当前版本：v{current}\n最新版本：v{latest}",
+        "update_open_page": "打开更新页面",
+        "update_later": "稍后再说",
+        "update_check_failed_title": "更新检查失败",
+        "update_check_failed_message": "无法检查更新。你可以继续使用当前版本。\n\n{error}",
+        "update_current": "当前已经是最新版本。",
+        "changelog": "更新内容",
         "tutorial": """小白流程
 
 1. 尽量安装 64 位 Python 3.12，然后运行 install_dependencies.bat。
@@ -347,6 +382,14 @@ Notes
         "json_too_small": "선택한 JSON의 그릴 수 있는 레이어 수가 템플릿 사용 가능 용량보다 훨씬 적습니다. 가져오면 흐릿해 보이므로 더 높은 레이어 JSON을 선택하세요.",
         "json_needs_more_template_layers": "FH는 커버 저장과 적용 범위를 올바르게 처리하려면 경계 레이어 4개가 필요합니다. JSON의 그릴 수 있는 레이어 수 + 4 이상인 템플릿을 사용하세요.",
         "safe_stop": "안전한 FH6 템플릿을 찾지 못해 쓰기 전에 중지했습니다.",
+        "update_available_title": "새 버전 사용 가능",
+        "update_available_message": "새 버전이 있습니다.\n\n현재: v{current}\n최신: v{latest}",
+        "update_open_page": "업데이트 페이지 열기",
+        "update_later": "나중에",
+        "update_check_failed_title": "업데이트 확인 실패",
+        "update_check_failed_message": "업데이트를 확인하지 못했습니다. 현재 버전을 계속 사용할 수 있습니다.\n\n{error}",
+        "update_current": "현재 최신 버전입니다.",
+        "changelog": "변경 내역",
         "tutorial": """초보자용 작업 순서
 
 1. 가능하면 64비트 Python 3.12를 설치한 뒤 install_dependencies.bat을 실행하세요.
@@ -381,6 +424,49 @@ def ensure_dirs():
 
 def tr(lang, key):
     return TEXT[lang].get(key, TEXT["en"].get(key, key))
+
+
+def version_key(value):
+    parts = []
+    for part in re.findall(r"\d+", str(value)):
+        parts.append(int(part))
+    while len(parts) < 3:
+        parts.append(0)
+    return tuple(parts[:3])
+
+
+def parse_version_source(source):
+    match = re.search(r'__version__\s*=\s*"([^"]+)"', source or "")
+    if not match:
+        raise ValueError("remote version file did not contain __version__")
+    return match.group(1).strip()
+
+
+def fetch_text_url(url, timeout=UPDATE_CHECK_TIMEOUT_SECONDS):
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": f"{APP_DISPLAY_NAME}/{__version__}",
+            "Accept": "text/plain,*/*",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        data = response.read(256 * 1024)
+    return data.decode("utf-8", errors="replace")
+
+
+def extract_changelog_section(changelog, version):
+    text = (changelog or "").strip()
+    if not text:
+        return ""
+    heading = re.compile(rf"^(#{{1,6}})\s+v?{re.escape(str(version))}\b.*$", re.I | re.M)
+    match = heading.search(text)
+    if not match:
+        return text[:6000]
+    next_heading = re.compile(rf"^{re.escape(match.group(1))}\s+\S+", re.M)
+    next_match = next_heading.search(text, match.end())
+    end = next_match.start() if next_match else len(text)
+    return text[match.start():end].strip()[:6000]
 
 
 def game_processes():
@@ -546,7 +632,9 @@ class App:
         ensure_dirs()
         self.root = Tk()
         self.root.title(app_title())
-        self.root.geometry("1180x780")
+        self.root.geometry("1420x900")
+        self.root.minsize(1180, 780)
+        self.root.configure(bg=COLOR_BG)
         self.lang = "en"
         self.queue = queue.Queue()
         self.shutdown_event = threading.Event()
@@ -577,6 +665,9 @@ class App:
         self.detailed_log_lock = threading.Lock()
         self.detailed_log_lines = deque()
         self.detailed_log_chars = 0
+        self.update_state = {"status": "checking"}
+        self.update_dialog = None
+        self.update_check_started = False
         self.status = StringVar(value=tr(self.lang, "ready"))
         self.progress_text = StringVar(value="")
         self.selected_profile = StringVar()
@@ -597,18 +688,68 @@ class App:
             self._update_setting_description()
         self._render_lists()
         self._poll_queue()
+        self.root.after(1000, self.start_update_check)
 
     def _configure_styles(self):
         style = ttk.Style(self.root)
+        try:
+            style.theme_use("clam")
+        except Exception:
+            pass
+        style.configure(".", background=COLOR_BG, foreground=COLOR_TEXT, fieldbackground=COLOR_INPUT)
+        style.configure("TFrame", background=COLOR_BG)
+        style.configure("TNotebook", background=COLOR_BG, borderwidth=0)
+        style.configure("Primary.TNotebook", background=COLOR_BG, borderwidth=0, tabmargins=(0, 0, 0, 0))
         style.configure(
             "Primary.TNotebook.Tab",
             padding=(18, 8),
             font=("Segoe UI", 10, "bold"),
+            background=COLOR_PANEL_ALT,
+            foreground=COLOR_MUTED,
+            borderwidth=0,
         )
         style.map(
             "Primary.TNotebook.Tab",
-            background=[("selected", "#d8e8ff"), ("active", "#eef5ff")],
-            foreground=[("selected", "#003b73"), ("active", "#003b73")],
+            background=[("selected", COLOR_ACCENT_DARK), ("active", COLOR_PANEL_ALT)],
+            foreground=[("selected", "#ffffff"), ("active", COLOR_TEXT)],
+        )
+        style.configure(
+            "TLabelframe",
+            background=COLOR_PANEL,
+            foreground=COLOR_TEXT,
+            bordercolor=COLOR_BORDER,
+            lightcolor=COLOR_BORDER,
+            darkcolor=COLOR_BORDER,
+        )
+        style.configure(
+            "TLabelframe.Label",
+            background=COLOR_PANEL,
+            foreground=COLOR_TEXT,
+            font=("Segoe UI", 10, "bold"),
+        )
+        style.configure(
+            "TCombobox",
+            fieldbackground=COLOR_INPUT,
+            background=COLOR_PANEL_ALT,
+            foreground=COLOR_TEXT,
+            arrowcolor=COLOR_TEXT,
+            bordercolor=COLOR_BORDER,
+            lightcolor=COLOR_BORDER,
+            darkcolor=COLOR_BORDER,
+        )
+        style.map(
+            "TCombobox",
+            fieldbackground=[("readonly", COLOR_INPUT)],
+            foreground=[("readonly", COLOR_TEXT)],
+            selectbackground=[("readonly", COLOR_ACCENT_DARK)],
+            selectforeground=[("readonly", "#ffffff")],
+        )
+        style.configure(
+            "TScrollbar",
+            background=COLOR_PANEL_ALT,
+            troughcolor=COLOR_BG,
+            bordercolor=COLOR_BORDER,
+            arrowcolor=COLOR_TEXT,
         )
 
     def _register_process(self, proc):
@@ -665,15 +806,126 @@ class App:
         self._terminate_active_processes()
         self.root.destroy()
 
+    def _parent_bg(self, parent):
+        try:
+            return parent.cget("bg")
+        except Exception:
+            return COLOR_PANEL
+
     def _label(self, parent, key, **kwargs):
+        kwargs.setdefault("bg", self._parent_bg(parent))
+        kwargs.setdefault("fg", COLOR_TEXT)
         widget = Label(parent, text=tr(self.lang, key), **kwargs)
         self.translated.append((widget, key, "text"))
         return widget
 
     def _button(self, parent, key, command, **kwargs):
+        kwargs.setdefault("bg", COLOR_BUTTON)
+        kwargs.setdefault("fg", COLOR_TEXT)
+        kwargs.setdefault("disabledforeground", COLOR_MUTED)
+        kwargs.setdefault("activebackground", COLOR_BUTTON_ACTIVE)
+        kwargs.setdefault("activeforeground", COLOR_TEXT)
+        kwargs.setdefault("relief", "flat")
+        kwargs.setdefault("bd", 0)
+        kwargs.setdefault("highlightthickness", 1)
+        kwargs.setdefault("highlightbackground", COLOR_BORDER)
+        kwargs.setdefault("highlightcolor", COLOR_ACCENT)
+        kwargs.setdefault("padx", 8)
+        kwargs.setdefault("pady", 3)
         widget = Button(parent, text=tr(self.lang, key), command=command, **kwargs)
         self.translated.append((widget, key, "text"))
         return widget
+
+    def _mapped_label_color(self, color):
+        value = str(color or "").lower()
+        if value in ("black", "#000000", "#000", "systembuttontext", "systemwindowtext"):
+            return COLOR_TEXT
+        if value in ("systemdisabledtext", "gray", "grey", "gray40", "grey40"):
+            return COLOR_MUTED
+        if value in ("#555", "#555555", "gray50", "grey50"):
+            return COLOR_MUTED
+        if value in ("#005a9e", "blue"):
+            return COLOR_ACCENT
+        if value in ("#8a5300", "orange", "darkorange"):
+            return COLOR_WARN
+        return color if color else COLOR_TEXT
+
+    def _apply_dark_theme_recursive(self, widget):
+        try:
+            if isinstance(widget, Frame):
+                bg = COLOR_BG if widget.master is self.root else COLOR_PANEL
+                widget.configure(bg=bg)
+            elif isinstance(widget, Label):
+                if widget in (getattr(self, "preview_label", None), getattr(self, "import_preview_label", None)):
+                    widget.configure(bg=COLOR_INPUT, fg=COLOR_TEXT)
+                elif widget is getattr(self, "update_indicator", None):
+                    widget.configure(bg=COLOR_PANEL)
+                else:
+                    widget.configure(bg=self._parent_bg(widget.master), fg=self._mapped_label_color(widget.cget("fg")))
+            elif isinstance(widget, Button):
+                widget.configure(
+                    bg=COLOR_BUTTON,
+                    fg=COLOR_TEXT,
+                    disabledforeground=COLOR_MUTED,
+                    activebackground=COLOR_BUTTON_ACTIVE,
+                    activeforeground=COLOR_TEXT,
+                    relief="flat",
+                    bd=0,
+                    highlightbackground=COLOR_BORDER,
+                    highlightcolor=COLOR_ACCENT,
+                )
+            elif isinstance(widget, Checkbutton):
+                widget.configure(
+                    bg=self._parent_bg(widget.master),
+                    fg=COLOR_TEXT,
+                    disabledforeground=COLOR_MUTED,
+                    activebackground=self._parent_bg(widget.master),
+                    activeforeground=COLOR_TEXT,
+                    selectcolor=COLOR_INPUT,
+                    relief="flat",
+                    highlightbackground=COLOR_BORDER,
+                    highlightcolor=COLOR_ACCENT,
+                )
+            elif isinstance(widget, Entry):
+                widget.configure(
+                    bg=COLOR_INPUT,
+                    fg=COLOR_TEXT,
+                    insertbackground=COLOR_TEXT,
+                    disabledbackground=COLOR_PANEL_ALT,
+                    disabledforeground=COLOR_MUTED,
+                    readonlybackground=COLOR_INPUT,
+                    relief="flat",
+                    highlightthickness=1,
+                    highlightbackground=COLOR_BORDER,
+                    highlightcolor=COLOR_ACCENT,
+                )
+            elif isinstance(widget, Listbox):
+                widget.configure(
+                    bg=COLOR_INPUT,
+                    fg=COLOR_TEXT,
+                    selectbackground=COLOR_ACCENT_DARK,
+                    selectforeground="#ffffff",
+                    highlightthickness=1,
+                    highlightbackground=COLOR_BORDER,
+                    relief="flat",
+                )
+            elif isinstance(widget, Text):
+                widget.configure(
+                    bg=COLOR_INPUT,
+                    fg=COLOR_TEXT,
+                    insertbackground=COLOR_TEXT,
+                    selectbackground=COLOR_ACCENT_DARK,
+                    selectforeground="#ffffff",
+                    highlightthickness=1,
+                    highlightbackground=COLOR_BORDER,
+                    relief="flat",
+                )
+            elif isinstance(widget, Canvas):
+                widget.configure(bg=COLOR_PANEL, highlightthickness=0)
+        except Exception:
+            pass
+        for child in widget.winfo_children():
+            self._apply_dark_theme_recursive(child)
 
     def _build(self):
         self._configure_styles()
@@ -682,9 +934,22 @@ class App:
         title_box = Frame(header)
         title_box.pack(side=LEFT, fill=X, expand=True)
         self._label(title_box, "title", font=("Segoe UI", 18, "bold"), anchor="w").pack(fill=X)
-        self._label(title_box, "subtitle", anchor="w", fg="#555").pack(fill=X)
+        self._label(title_box, "subtitle", anchor="w", fg=COLOR_MUTED).pack(fill=X)
         right = Frame(header)
         right.pack(side=RIGHT)
+        update_row = Frame(right)
+        update_row.pack(anchor="e", fill=X)
+        self.update_indicator = Label(
+            update_row,
+            text="",
+            width=2,
+            bg=COLOR_PANEL,
+            fg=COLOR_WARN,
+            font=("Segoe UI", 11, "bold"),
+            cursor="hand2",
+        )
+        self.update_indicator.pack(side=RIGHT)
+        self.update_indicator.bind("<Button-1>", self.show_update_status)
         self._label(right, "language").pack(anchor="e")
         self.lang_combo = ttk.Combobox(right, values=list(LANGUAGES.keys()), state="readonly", width=10)
         self.lang_combo.set("English")
@@ -697,7 +962,7 @@ class App:
         self.process_combo = ttk.Combobox(process_bar, textvariable=self.selected_pid, state="readonly", width=44)
         self.process_combo.pack(side=LEFT, padx=8)
         self._button(process_bar, "refresh", self.refresh_processes).pack(side=LEFT)
-        Label(process_bar, textvariable=self.status, anchor="e").pack(side=RIGHT)
+        Label(process_bar, textvariable=self.status, anchor="e", bg=COLOR_BG, fg=COLOR_MUTED).pack(side=RIGHT)
 
         self.tabs = ttk.Notebook(self.root, style="Primary.TNotebook")
         self.tabs.pack(fill=BOTH, expand=True, padx=14, pady=(0, 8))
@@ -714,6 +979,7 @@ class App:
         self._build_tools_tab()
         self._build_tutorial_tab()
         self._build_log()
+        self._apply_dark_theme_recursive(self.root)
 
     def _build_generate_tab(self):
         left_outer = Frame(self.generate_tab)
@@ -1123,6 +1389,161 @@ class App:
             self.log_line(f"Failed to export detailed log: {exc}")
             return
         self.log_line(f"Detailed log exported: {output} ({len(text)} chars, limit {DETAILED_LOG_OUTPUT_LIMIT}).")
+
+    def start_update_check(self):
+        if self.closed or self.update_check_started:
+            return
+        self.update_check_started = True
+        threading.Thread(target=self._update_check_worker, daemon=True).start()
+
+    def _update_check_worker(self):
+        try:
+            version_source = fetch_text_url(UPDATE_VERSION_URL)
+            latest_version = parse_version_source(version_source)
+        except (OSError, ValueError, urllib.error.URLError) as exc:
+            self.queue.put(("update_failed", str(exc)))
+            return
+
+        changelog = ""
+        try:
+            changelog = fetch_text_url(UPDATE_CHANGELOG_URL)
+        except (OSError, urllib.error.URLError) as exc:
+            self._record_detail(f"Update changelog fetch failed: {exc}")
+
+        payload = {
+            "current": __version__,
+            "latest": latest_version,
+            "changelog": extract_changelog_section(changelog, latest_version),
+        }
+        if version_key(latest_version) > version_key(__version__):
+            self.queue.put(("update_available", payload))
+        else:
+            self.queue.put(("update_current", payload))
+
+    def _set_update_indicator(self, text="", color=COLOR_WARN):
+        if hasattr(self, "update_indicator"):
+            self.update_indicator.config(text=text, fg=color)
+
+    def _handle_update_failed(self, error):
+        self.update_state = {"status": "failed", "error": error}
+        self._set_update_indicator("!", COLOR_WARN)
+        self.log_line(f"Update check failed: {error}")
+
+    def _handle_update_current(self, payload):
+        self.update_state = {"status": "current", **payload}
+        self._set_update_indicator("")
+        self._record_detail(f"Update check OK: latest={payload.get('latest')}")
+
+    def _handle_update_available(self, payload):
+        self.update_state = {"status": "available", **payload}
+        self._set_update_indicator("!", COLOR_ACCENT)
+        self.log_line(f"New version available: v{payload.get('latest')} (current v{__version__})")
+        self.show_update_dialog(payload)
+
+    def show_update_status(self, _event=None):
+        status = self.update_state.get("status")
+        if status == "failed":
+            messagebox.showwarning(
+                tr(self.lang, "update_check_failed_title"),
+                tr(self.lang, "update_check_failed_message").format(error=self.update_state.get("error", "")),
+                parent=self.root,
+            )
+        elif status == "available":
+            self.show_update_dialog(self.update_state)
+
+    def show_update_dialog(self, payload=None):
+        payload = payload or self.update_state
+        if self.update_dialog is not None and self.update_dialog.winfo_exists():
+            self.update_dialog.lift()
+            self.update_dialog.focus_force()
+            return
+
+        latest = payload.get("latest", "")
+        changelog = payload.get("changelog") or "No changelog section was available."
+        dialog = Toplevel(self.root)
+        self.update_dialog = dialog
+        dialog.title(tr(self.lang, "update_available_title"))
+        dialog.configure(bg=COLOR_BG)
+        dialog.resizable(True, True)
+
+        body = Frame(dialog, bg=COLOR_BG)
+        body.pack(fill=BOTH, expand=True, padx=16, pady=14)
+        Label(
+            body,
+            text=tr(self.lang, "update_available_message").format(current=__version__, latest=latest),
+            bg=COLOR_BG,
+            fg=COLOR_TEXT,
+            justify=LEFT,
+            anchor="w",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(fill=X, pady=(0, 10))
+        Label(
+            body,
+            text=tr(self.lang, "changelog"),
+            bg=COLOR_BG,
+            fg=COLOR_MUTED,
+            anchor="w",
+        ).pack(fill=X)
+
+        text_frame = Frame(body, bg=COLOR_BG)
+        text_frame.pack(fill=BOTH, expand=True, pady=(4, 12))
+        changelog_text = Text(text_frame, width=80, height=18, wrap="word")
+        scrollbar = ttk.Scrollbar(text_frame, orient="vertical", command=changelog_text.yview)
+        changelog_text.configure(
+            yscrollcommand=scrollbar.set,
+            bg=COLOR_INPUT,
+            fg=COLOR_TEXT,
+            insertbackground=COLOR_TEXT,
+            selectbackground=COLOR_ACCENT_DARK,
+            selectforeground="#ffffff",
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER,
+            relief="flat",
+        )
+        changelog_text.pack(side=LEFT, fill=BOTH, expand=True)
+        scrollbar.pack(side=RIGHT, fill="y")
+        changelog_text.insert(END, changelog)
+        changelog_text.config(state="disabled")
+
+        actions = Frame(body, bg=COLOR_BG)
+        actions.pack(fill=X)
+
+        def close_update_dialog():
+            self.update_dialog = None
+            dialog.destroy()
+
+        def open_update_page():
+            webbrowser.open(UPDATE_RELEASE_URL)
+            close_update_dialog()
+
+        Button(
+            actions,
+            text=tr(self.lang, "update_later"),
+            command=close_update_dialog,
+            bg=COLOR_BUTTON,
+            fg=COLOR_TEXT,
+            activebackground=COLOR_BUTTON_ACTIVE,
+            activeforeground=COLOR_TEXT,
+            relief="flat",
+            bd=0,
+            padx=12,
+            pady=6,
+        ).pack(side=RIGHT)
+        Button(
+            actions,
+            text=tr(self.lang, "update_open_page"),
+            command=open_update_page,
+            bg=COLOR_ACCENT_DARK,
+            fg="#ffffff",
+            activebackground=COLOR_ACCENT,
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            padx=12,
+            pady=6,
+        ).pack(side=RIGHT, padx=(0, 8))
+
+        dialog.protocol("WM_DELETE_WINDOW", close_update_dialog)
 
     def _reset_generation_eta(self):
         self.eta_intervals.clear()
@@ -1908,6 +2329,12 @@ class App:
                 self.show_preview_file(payload)
             elif kind == "render_lists":
                 self._render_lists()
+            elif kind == "update_failed":
+                self._handle_update_failed(payload)
+            elif kind == "update_current":
+                self._handle_update_current(payload)
+            elif kind == "update_available":
+                self._handle_update_available(payload)
         if not self.closed:
             self.root.after(100, self._poll_queue)
 

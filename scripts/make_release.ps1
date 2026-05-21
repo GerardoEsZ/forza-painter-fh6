@@ -16,6 +16,8 @@ $ZipPath = Join-Path $DistRoot "$PackageName.zip"
 $include = @(
     "README.md",
     "README.zh-CN.md",
+    "README.ko-KR.md",
+    "CHANGELOG.md",
     "requirements.txt",
     "requirements-preview.txt",
     "install_dependencies.bat",

@@ -15,12 +15,16 @@
 </p>
 
 <p align="center">
-  <code>v1.4.1</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
+  <code>v1.5.0</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
 </p>
 
 把 PNG/JPG/BMP 图片转换成 Forza Horizon 6 的 Vinyl Group 图层。软件内完成生成、预览和导入，普通用户不需要手动填写内存地址。
 
 > **画面发糊先看这里：** 优先提高生成页里的 `Random samples / 随机样本`。随机样本数在 **200000 以上** 通常会有明显质变；数值越高越清晰，但生成时间也会明显增加。
+
+> **生成速度更新：** v1.5.0 内置上游 GPU 生成器 `canary-26052102`，引入上游 PR #4 的 work-group evaluation 算法，用于加速 GPU 候选图形评估。
+
+> **自动更新检查：** v1.5.0 启动时会检查新版本。检查失败会在右上角显示小 `!`；发现新版本会显示更新内容和更新页面按钮。
 
 > **导入过慢：** v1.4.1 起会依次尝试 v1.3 和 v1.4 两套 FH6 模板定位逻辑，并在必要时使用 RTTI fallback。自动定位最长可能需要 5 分钟；请保持 FH6 停留在 Vinyl Group Editor，不要切换菜单，若仍失败请导出详细日志并提交 issue。
 
@@ -65,21 +69,23 @@
 
 1. 下载仓库 ZIP 并解压。
 2. 安装 64 位 Python，推荐 Python 3.12。
-3. 双击 `install_dependencies.bat` 安装依赖。
-4. 双击 `start_app.bat` 打开软件。
-5. 在游戏里进入 Vinyl Group Editor，加载并 Ungroup 球形模板。
-6. 在软件里生成 JSON，切到 Import 页面，填写模板层数后导入。
+3. 双击 `start_app.bat` 打开软件。首次运行会自动创建 `.venv`、安装缺失依赖，然后启动软件。
+4. 在游戏里进入 Vinyl Group Editor，加载并 Ungroup 球形模板。
+5. 在软件里生成 JSON，切到 Import 页面，填写模板层数后导入。
 
 ## 安装
 
 普通用户只需要运行：
 
 ```text
-install_dependencies.bat
 start_app.bat
 ```
 
+`start_app.bat` 会自动创建项目内 `.venv`、安装缺失依赖，然后直接启动软件。`install_dependencies.bat` 仍然保留，用于只准备或修复环境但不启动软件的情况。
+
 Python 程序只需要 `psutil` 和 `pywin32`。图片/JSON 预览需要可选的 NumPy/OpenCV，安装脚本会在容易冲突的 Python 版本上自动跳过预览依赖。
+
+依赖安装器会创建项目内 `.venv` 文件夹，并把依赖安装到这个虚拟环境里。`start_app.bat`、`check_environment.bat` 和拖拽启动脚本都会使用这个虚拟环境，不再污染全局 Python。
 
 如果软件打不开，运行：
 
@@ -150,6 +156,17 @@ check_environment.bat
 
 ## 更新日志
 
+### v1.5.0 / 2026-05-22
+
+- 版本更新到 `v1.5.0`，发布包名称同步为 `forza-painter-fh6-v1.5.0.zip`。
+- 内置 GPU/OpenCL 生成器更新到上游 `canary-26052102`。
+- 引入上游 PR #4 的 work-group evaluation 算法，降低 GPU 候选图形评估开销，在支持的 OpenCL 设备上提升生成吞吐。
+- 增加启动时自动检查更新：检查失败会在右上角显示小 `!`，发现新版本会弹出更新内容并提供更新页面按钮。
+- 增加根目录 `CHANGELOG.md`，用于在更新提示里展示发布内容。
+- 桌面 UI 改为深色主题，长时间生成和导入时显示更清晰。
+- `start_app.bat` 现在会自动准备项目内 `.venv`：缺依赖时先安装，安装完成后直接启动软件。
+- 依赖安装改为使用项目内 `.venv` 虚拟环境，不再把依赖安装到全局 Python。
+
 ### v1.4.1 / 2026-05-21
 
 - 版本更新到 `v1.4.1`，发布包名称同步为 `forza-painter-fh6-v1.4.1.zip`。
@@ -219,16 +236,11 @@ check_environment.bat
 FH6 导入可以不依赖预览继续使用。先重新安装核心依赖：
 
 ```powershell
-python -m pip uninstall -y numpy opencv-python
-python -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip uninstall -y numpy opencv-python
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-如果需要内置预览，请使用 Python 3.12，再安装可选预览依赖：
-
-```powershell
-py -3.12 -m pip install -r requirements.txt
-py -3.12 -m pip install -r requirements-preview.txt
-```
+如果需要内置预览，请安装 Python 3.12，删除 `.venv` 文件夹，然后重新运行 `install_dependencies.bat`，让脚本用 Python 3.12 重新创建虚拟环境并安装预览依赖。
 
 如果你正在用 Python 3.14，并且依赖安装失败，请安装 Python 3.12 后重新运行 `install_dependencies.bat`。
 
@@ -271,10 +283,10 @@ check_environment.bat
 
 ## 用户需要打开哪些文件
 
-- `install_dependencies.bat`：安装依赖。
+- `start_app.bat`：缺依赖时自动安装，然后启动软件。
+- `install_dependencies.bat`：只准备或修复依赖，不启动软件。
 - `check_environment.bat`：检查核心环境是否正常。
 - `clean_runtime_data.bat`：发布或重新压缩前清理运行缓存。
-- `start_app.bat`：启动软件。
 - `1. drag_image_file_here.bat`：可选，把图片拖到这里打开软件。
 
 普通用户不需要直接打开 Python 文件。

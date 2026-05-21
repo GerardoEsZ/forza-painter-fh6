@@ -15,12 +15,16 @@
 </p>
 
 <p align="center">
-  <code>v1.4.1</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
+  <code>v1.5.0</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
 </p>
 
 PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어용 geometry JSON으로 변환합니다. 데스크톱 앱에서 JSON 생성, 미리보기, FH6 가져오기를 한 번에 처리할 수 있으며 일반 사용자는 메모리 주소를 직접 입력하지 않아도 됩니다.
 
 > **결과가 흐릿해 보이면:** 먼저 `Random samples` 값을 높이세요. **200000** 이상부터 품질 차이가 크게 보이는 경우가 많습니다. 값이 높을수록 선명해지지만 생성 시간도 길어집니다.
+
+> **생성 속도 업데이트:** v1.5.0은 upstream GPU 생성기 `canary-26052102`를 포함하며, upstream PR #4의 work-group evaluation 알고리즘으로 GPU 후보 평가 속도를 개선합니다.
+
+> **업데이트 확인:** v1.5.0은 시작 시 새 버전을 확인합니다. 확인에 실패하면 오른쪽 위에 작은 `!`가 표시되고, 새 버전이 있으면 변경 내역과 업데이트 페이지 버튼이 표시됩니다.
 
 > **가져오기가 너무 느리면:** v1.4.1부터는 v1.3 및 v1.4 FH6 템플릿 찾기 방식을 모두 시도한 뒤 필요하면 RTTI fallback을 사용합니다. 자동 찾기는 최대 5분 정도 걸릴 수 있으므로 FH6를 Vinyl Group Editor에 그대로 두고 메뉴를 전환하지 마세요. 그래도 실패하면 자세한 로그를 내보내 이슈에 첨부해 주세요.
 
@@ -28,19 +32,19 @@ PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어용 geometry JSO
 
 1. 이 저장소를 ZIP으로 내려받아 압축을 풉니다.
 2. 64비트 Python을 설치합니다. Python 3.12를 권장합니다.
-3. `install_dependencies.bat`을 더블클릭합니다.
-4. `start_app.bat`을 더블클릭합니다.
-5. FH6에서 Vinyl Group Editor를 열고 sphere 템플릿을 불러온 뒤 Ungroup합니다.
-6. 앱에서 JSON을 생성하고, Import 페이지에서 템플릿 레이어 수를 입력한 뒤 가져오기를 실행합니다.
+3. `start_app.bat`을 더블클릭합니다. 첫 실행 시 `.venv`를 만들고 누락된 의존성을 설치한 뒤 앱을 시작합니다.
+4. FH6에서 Vinyl Group Editor를 열고 sphere 템플릿을 불러온 뒤 Ungroup합니다.
+5. 앱에서 JSON을 생성하고, Import 페이지에서 템플릿 레이어 수를 입력한 뒤 가져오기를 실행합니다.
 
 ## 설정
 
 대부분의 사용자는 아래 두 파일만 실행하면 됩니다.
 
 ```text
-install_dependencies.bat
 start_app.bat
 ```
+
+`start_app.bat`은 프로젝트 내부의 `.venv`를 자동으로 만들고 누락된 의존성을 설치한 뒤 앱을 바로 실행합니다. 앱을 실행하지 않고 환경만 준비하거나 복구하려면 `install_dependencies.bat`을 따로 실행할 수 있습니다.
 
 앱이 시작되지 않으면 아래 파일을 실행해 환경을 확인하세요.
 
@@ -49,6 +53,8 @@ check_environment.bat
 ```
 
 핵심 Python 앱은 `psutil`과 `pywin32`만 필요합니다. 이미지/JSON 미리보기는 선택 의존성인 NumPy/OpenCV를 사용하며, Python 버전에 따라 설치 프로그램이 미리보기 패키지를 건너뛸 수 있습니다.
+
+의존성 설치 도구는 프로젝트 내부의 `.venv` 폴더를 만들고 그 가상 환경에 의존성을 설치합니다. `start_app.bat`, `check_environment.bat`, 드래그 앤 드롭 바로가기는 전역 Python 대신 이 가상 환경을 사용합니다.
 
 ## JSON 생성
 
