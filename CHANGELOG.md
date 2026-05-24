@@ -6,6 +6,7 @@
 - Updated the bundled GPU generator to upstream `canary-26052401`.
 - Added upstream `errorGridSize` preset support.
 - Integrated the upstream transparent-area overhang prevention algorithm adjustment.
+- Significantly improved generation quality for the large ellipse at the bottom of transparent images.
 
 ## v1.5.4 / 2026-05-23
 
