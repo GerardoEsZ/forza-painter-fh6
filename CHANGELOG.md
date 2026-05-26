@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.6.5 / 2026-05-25
+
+- Updated the app version to `v1.6.5`; release packages now use `forza-painter-fh6-v1.6.5.exe`.
+- Updated the bundled GPU generator to upstream `v1.2-Canary-20260525`.
+- Bundled presets now set `forceOpaqueShapes = false` by default so transparent source regions can remain transparent unless users override the setting.
+- Generator launches now use a sanitized environment to avoid external Python, Conda, WebUI, Vulkan, or OpenCL override variables affecting the bundled GPU generator.
+- Reduced generation-time filesystem polling so the app checks previews and JSON outputs less aggressively while the GPU generator is running.
+- The heaviest bundled preset now uses `previewEvery = 100` instead of `previewEvery = 1`, avoiding excessive preview PNG writes during high-resolution generation.
+- Fixed output discovery for preprocessed generation inputs so generated JSON and preview files are tracked from the actual image passed to the GPU generator.
+
 ## v1.6.1 / 2026-05-24
 
 - Updated the app version to `v1.6.1`; release packages now use `forza-painter-fh6-v1.6.1.exe`.

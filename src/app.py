@@ -25,7 +25,7 @@ import psutil
 from app_paths import ROOT, SOURCE_DIR
 from game_profiles import PROFILES
 from geometry_json import RECTANGLE, ROTATED_ELLIPSE, load_normalized_geometry
-from generator_backend import GENERATOR_EXE, USER_SETTINGS_DIR, best_geometry_jsons, build_generator_command, generated_jsons, generated_preview_files, generator_preview_path, load_settings, preprocess_input_image, write_custom_settings, write_user_settings_preset
+from generator_backend import GENERATOR_EXE, GENERATOR_JSON_SCAN_SECONDS, GENERATOR_POLL_SLEEP_SECONDS, GENERATOR_PREVIEW_SCAN_SECONDS, USER_SETTINGS_DIR, best_geometry_jsons, build_generator_command, build_generator_env, generated_jsons, generated_preview_files, generator_preview_path, load_settings, preprocess_input_image, write_custom_settings, write_user_settings_preset
 from version import APP_DISPLAY_NAME, __version__, app_title
 
 
@@ -2360,8 +2360,11 @@ class App:
                     self.queue.put(("status", tr(self.lang, "stopped")))
                     return
                 self._reset_generation_eta()
-                before = {path.resolve() for path in generated_jsons(image_path)}
-                preview_path = generator_preview_path(image_path)
+                input_image = preprocess_input_image(image_path, setting)
+                if input_image != image_path:
+                    self.queue.put(("log", f"Preprocessed image: {input_image}"))
+                before = {path.resolve() for path in generated_jsons(input_image)}
+                preview_path = generator_preview_path(input_image)
                 if preview_path.exists():
                     try:
                         preview_path.unlink()
@@ -2370,9 +2373,6 @@ class App:
                 self.queue.put(("log", f"Generating: {image_path}"))
                 self.queue.put(("preview_file", image_path))
                 flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-                input_image = preprocess_input_image(image_path, setting)
-                if input_image != image_path:
-                    self.queue.put(("log", f"Preprocessed image: {input_image}"))
                 cmd = build_generator_command(input_image, setting)
                 self._record_detail(f"GENERATOR COMMAND: {self._format_command(cmd)}")
                 self.queue.put(("log", f"Running GPU generator with {setting['path'].name}"))
@@ -2389,6 +2389,7 @@ class App:
                     encoding="utf-8",
                     errors="replace",
                     creationflags=flags,
+                    env=build_generator_env(),
                 )
                 if proc is None:
                     self.queue.put(("status", tr(self.lang, "stopped")))
@@ -2424,11 +2425,14 @@ class App:
                         friendly = self.friendly_generator_line(raw_line)
                         last_generator_message = self.queue_generator_message(friendly, last_generator_message)
 
+                next_preview_scan = 0.0
+                next_json_scan = 0.0
+
                 try:
                     while proc.poll() is None:
                         if self.shutdown_event.is_set():
                             self._terminate_process(proc)
-                            outputs = self._queue_generated_outputs(image_path, before)
+                            outputs = self._queue_generated_outputs(input_image, before)
                             for output in outputs:
                                 self.queue.put(("log", tr(self.lang, "checkpoint_available_after_failure").format(path=output)))
                             if outputs:
@@ -2436,17 +2440,22 @@ class App:
                             self.queue.put(("status", tr(self.lang, "stopped")))
                             return
                         _drain_generator_output()
-                        preview_files = generated_preview_files(input_image)
-                        if preview_files:
-                            newest_preview = preview_files[0]
-                            preview_mtime = newest_preview.stat().st_mtime
-                            if preview_mtime != last_preview_mtime:
-                                last_preview_mtime = preview_mtime
-                                self.queue.put(("preview_file", newest_preview))
-                        newest = generated_jsons(image_path)
-                        if newest and newest[0] != last_preview:
-                            last_preview = newest[0]
-                        time.sleep(0.1)
+                        now = time.monotonic()
+                        if now >= next_preview_scan:
+                            next_preview_scan = now + GENERATOR_PREVIEW_SCAN_SECONDS
+                            preview_files = generated_preview_files(input_image)
+                            if preview_files:
+                                newest_preview = preview_files[0]
+                                preview_mtime = newest_preview.stat().st_mtime
+                                if preview_mtime != last_preview_mtime:
+                                    last_preview_mtime = preview_mtime
+                                    self.queue.put(("preview_file", newest_preview))
+                        if now >= next_json_scan:
+                            next_json_scan = now + GENERATOR_JSON_SCAN_SECONDS
+                            newest = generated_jsons(input_image)
+                            if newest and newest[0] != last_preview:
+                                last_preview = newest[0]
+                        time.sleep(GENERATOR_POLL_SLEEP_SECONDS)
                     if self.shutdown_event.is_set():
                         return
                     reader.join(timeout=1)
@@ -2458,7 +2467,7 @@ class App:
                             self.current_generator_proc = None
                 if proc.returncode != 0:
                     self._record_detail(f"GENERATOR EXIT: {proc.returncode}")
-                    outputs = self._queue_generated_outputs(image_path, before)
+                    outputs = self._queue_generated_outputs(input_image, before)
                     for output in outputs:
                         self.queue.put(("log", tr(self.lang, "checkpoint_available_after_failure").format(path=output)))
                     if outputs:
@@ -2467,13 +2476,13 @@ class App:
                     self.queue.put(("status", tr(self.lang, "failed")))
                     return
                 self._record_detail("GENERATOR EXIT: 0")
-                new_outputs = self._queue_generated_outputs(image_path, before)
+                new_outputs = self._queue_generated_outputs(input_image, before)
                 if not new_outputs:
                     self.queue.put(("log", "Generator finished but no JSON output was found."))
                     self.queue.put(("status", tr(self.lang, "failed")))
                     return
                 for output in new_outputs:
-                    preview_files = generated_preview_files(image_path)
+                    preview_files = generated_preview_files(input_image)
                     if preview_files:
                         self.queue.put(("preview_file", preview_files[0]))
                     else:

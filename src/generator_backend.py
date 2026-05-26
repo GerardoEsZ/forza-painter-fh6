@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 
@@ -11,6 +12,10 @@ SETTINGS_DIR = BUNDLED_SETTINGS_DIR
 GENERATOR_EXE = RESOURCE_ROOT / "bin" / "forza-painter-geometrize-go.exe"
 PREVIEW_DIR = ROOT / "runtime" / "previews"
 CUSTOM_SETTINGS_DIR = ROOT / "runtime" / "custom-settings"
+
+GENERATOR_PREVIEW_SCAN_SECONDS = 0.5
+GENERATOR_JSON_SCAN_SECONDS = 2.0
+GENERATOR_POLL_SLEEP_SECONDS = 0.2
 
 
 SETTING_KEYS = (
@@ -33,6 +38,101 @@ SETTING_KEYS = (
     "saveEvery",
     "stopAt",
 )
+
+_GENERATOR_ENV_KEEP = {
+    "ALLUSERSPROFILE",
+    "APPDATA",
+    "COMMONPROGRAMFILES",
+    "COMMONPROGRAMFILES(X86)",
+    "COMMONPROGRAMW6432",
+    "COMSPEC",
+    "DRIVERDATA",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "LOCALAPPDATA",
+    "NUMBER_OF_PROCESSORS",
+    "OS",
+    "PATH",
+    "PATHEXT",
+    "PROCESSOR_ARCHITECTURE",
+    "PROCESSOR_IDENTIFIER",
+    "PROCESSOR_LEVEL",
+    "PROCESSOR_REVISION",
+    "PROGRAMDATA",
+    "PROGRAMFILES",
+    "PROGRAMFILES(X86)",
+    "PROGRAMW6432",
+    "PUBLIC",
+    "SYSTEMDRIVE",
+    "SYSTEMROOT",
+    "TEMP",
+    "TMP",
+    "USERDOMAIN",
+    "USERNAME",
+    "USERPROFILE",
+    "WINDIR",
+}
+
+_GENERATOR_ENV_DROP_PREFIXES = (
+    "CONDA",
+    "CUDA_VISIBLE_DEVICES",
+    "OCL_ICD",
+    "OPENCL",
+    "PYTHON",
+    "PYENV",
+    "VIRTUAL_ENV",
+    "VK_",
+    "VULKAN",
+)
+
+_PATH_DROP_FRAGMENTS = (
+    "\\.venv",
+    "/.venv",
+    "\\venv\\",
+    "/venv/",
+    "anaconda",
+    "conda",
+    "miniconda",
+    "python",
+    "stable-diffusion",
+    "webui",
+)
+
+
+def _filtered_path(value):
+    kept = []
+    seen = set()
+    for entry in str(value or "").split(os.pathsep):
+        item = entry.strip()
+        if not item:
+            continue
+        lowered = item.lower()
+        if any(fragment in lowered for fragment in _PATH_DROP_FRAGMENTS):
+            continue
+        key = lowered.rstrip("\\/")
+        if key in seen:
+            continue
+        seen.add(key)
+        kept.append(item)
+    return os.pathsep.join(kept)
+
+
+def build_generator_env():
+    env = {}
+    for key, value in os.environ.items():
+        upper = key.upper()
+        if upper not in _GENERATOR_ENV_KEEP:
+            continue
+        if upper == "PATH":
+            env[key] = _filtered_path(value)
+        else:
+            env[key] = value
+    for key in list(env):
+        upper = key.upper()
+        if any(upper.startswith(prefix) for prefix in _GENERATOR_ENV_DROP_PREFIXES):
+            env.pop(key, None)
+    env["FORZA_PAINTER_GENERATOR_SANITIZED_ENV"] = "1"
+    return env
 
 
 def setting_description(path):
