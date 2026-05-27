@@ -53,6 +53,7 @@ from i18n import tr
 
 LANGUAGES = {
     "English": "en",
+    "Português (Brasil)": "pt-br",
     "中文": "zh",
     "中文 (繁體)": "zh-tw",
     "한국어": "ko",
