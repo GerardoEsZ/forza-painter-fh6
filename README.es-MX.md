@@ -16,12 +16,12 @@
 </p>
 
 <p align="center">
-  <code>v1.7.0</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>EXE de un solo archivo</code>
+  <code>v1.8.0</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>EXE de un solo archivo</code>
 </p>
 
 Convierte imágenes PNG/JPG/BMP en capas de Grupo de Vinilo para Forza Horizon 6. La aplicación integra la generación, la vista previa y la importación en una sola ventana de escritorio; los usuarios normales no necesitan Python, `.venv`, archivos batch ni direcciones de memoria manuales.
 
-> **Descarga el EXE:** obtén `forza-painter-fh6-v1.7.0.exe` desde [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) y ejecútalo directamente.
+> **Descarga el EXE:** obtén `forza-painter-fh6-v1.8.0.exe` desde [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) y ejecútalo directamente.
 
 > **Preset Market:** explora imágenes compartidas, presets y paquetes JSON en https://painter6.com o usa el nuevo banner del mercado dentro de la aplicación.
 
@@ -35,12 +35,13 @@ Convierte imágenes PNG/JPG/BMP en capas de Grupo de Vinilo para Forza Horizon 6
 | Vista previa de salida | Muestra vistas previas de la imagen original y de la geometría generada dentro de la app. |
 | Importar a FH6 | Importa JSON al Editor de Grupo de Vinilo de FH6 que esté abierto actualmente. |
 | Flujo seguro para FH6 | Localiza automáticamente y verifica la tabla de capas editable antes de escribir. |
+| Importación/exportación full-shape | Importación experimental por código de tipo en la página Importar y exportación del grupo actual en la página Exportar. |
 | Preset Market | Abre https://painter6.com desde la app para explorar imágenes compartidas, presets y paquetes JSON. |
 | Verificación de actualizaciones | Busca nuevas versiones al iniciar y muestra notas del changelog cuando están disponibles. |
 
 ## Inicio rápido
 
-1. Descarga `forza-painter-fh6-v1.7.0.exe` desde [Releases](https://github.com/bvzrays/forza-painter-fh6/releases).
+1. Descarga `forza-painter-fh6-v1.8.0.exe` desde [Releases](https://github.com/bvzrays/forza-painter-fh6/releases).
 2. Coloca el EXE en una carpeta normal con permisos de escritura, por ejemplo `Desktop\forza-painter-fh6`.
 3. Haz doble clic en el EXE. Para importar a FH6, ejecútalo como administrador si Windows bloquea el acceso al proceso.
 4. En FH6, abre `Create Vinyl Group` / `Vinyl Group Editor`, carga una plantilla de esferas y luego usa `Ungroup`.
@@ -106,6 +107,23 @@ Una sola imagen puede generar varios archivos JSON de punto de control. Se recom
 
 FH necesita 4 capas extra de límite para guardar correctamente la portada y aplicar los límites. Ejemplo: un JSON de 1000 capas debe usar al menos una plantilla de 1004 capas; una plantilla de 3000 capas puede importar aproximadamente 2996 formas dibujables.
 
+## Importación/exportación experimental full-shape
+
+La versión v1.8.0 agrega soporte de investigación para JSON con códigos de tipo de FH6 directamente en el flujo principal: puedes importar JSON full-shape/type-code desde la página `Import` y exportar el grupo editable actual de FH6 desde la página `Export`.
+
+Usa esto solo para JSON full-shape. Los JSON normales de elipses generados por la aplicación todavía deben usar la página normal de `Import`.
+
+- La exportación es de solo lectura y valida la tabla editable de capas de FH6 antes de escribir el JSON.
+- La importación detecta automáticamente JSON full-shape/type-code desde la lista normal de JSON y espera una plantilla de círculo blanco simple guardada/reabierta, normalmente de 3000 capas, desagrupada antes de importar.
+- Los marcadores de JSON full-shape compatibles incluyen `type_word`, `shape_word`, códigos de tipo completos de FH6, campos JSON hechos a mano de Kloudy/Fabric, campos de formas de fuente y nombres primitivos simples como `Circle`, `Square`, `Triangle` y `Ellipse`.
+- Las vistas previas de JSON con código de tipo usan recursos de vértices de vinilo de FH6 incluidos, por lo que los JSON con múltiples formas del nuevo exportador y los JSON hechos a mano estilo Kloudy/Fabric pueden previsualizarse sin usar rectángulos como respaldo.
+- Las capas de máscara se previsualizan como recortes transparentes sobre las capas inferiores ya dibujadas; las miniaturas de la interfaz de FH6 aún pueden mostrar la propia forma de la máscara.
+- Después de importar full-shape, guarda y vuelve a abrir el grupo de vinilo antes de evaluar el resultado; FH6 puede seguir mostrando recursos obsoletos de la plantilla en vivo dentro del editor actual.
+- Si falla la importación/exportación full-shape, la app muestra un recordatorio directo con las comprobaciones importantes de FH6, editor y plantilla. Usa `Export full-shape report` solo cuando necesites enviar datos de depuración.
+- El importador escribe únicamente campos visuales estables y la palabra de forma de 16 bits en el desplazamiento de capa `0x7A`.
+- No copia punteros de recursos volátiles de FH6 como `0xA8`.
+- Después de completar la importación, guarda y recarga el grupo de vinilo de FH6 antes de evaluar miniaturas obsoletas de la interfaz.
+
 ## Reglas importantes
 
 - La plantilla de FH6 debe estar desagrupada antes de importar.
@@ -118,7 +136,7 @@ FH necesita 4 capas extra de límite para guardar correctamente la portada y apl
 
 ## Archivos de ejecución
 
-El EXE de un solo archivo extrae temporalmente sus archivos internos y guarda los datos normales de ejecución fuera del EXE. La app muestra las rutas exactas en el registro de inicio y en la página `Tools`.
+El EXE de un solo archivo extrae temporalmente sus archivos internos y guarda los datos normales de ejecución fuera del EXE. La app muestra las rutas exactas en el registro de inicio.
 
 Carpetas externas esperadas junto al EXE:
 
@@ -145,6 +163,13 @@ Estas carpetas pueden eliminarse cuando la app esté cerrada si quieres restable
 ## Changelog
 
 Aquí solo se conservan las entradas de versiones publicadas. Consulta [CHANGELOG.md](CHANGELOG.md) para ver el changelog que muestra el aviso de actualización de la app.
+
+### v1.8.0 / 2026-06-01
+
+- Se actualizó la versión de la app a `v1.8.0`; los paquetes de lanzamiento ahora usan `forza-painter-fh6-v1.8.0.exe`.
+- Se agregó el flujo experimental de importación/exportación full-shape: la importación full-shape está en la página `Import` y la exportación del grupo actual está en la página `Export`.
+- La importación/exportación full-shape usa la palabra de forma de 16 bits en el desplazamiento de capa `0x7A` y evita punteros de recursos volátiles como `0xA8`.
+- Se incluyó la atribución del importador personalizado FH6 Painter de Kloudy, el registro de formas de fuente y los datos de recursos de vinilo de FH6 para compatibilidad y vistas previas de JSON con códigos de tipo.
 
 ### v1.7.0 / 2026-06-01
 
